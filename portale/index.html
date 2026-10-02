@@ -1,0 +1,890 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>body{margin:0}[hidden]{display:none!important}img{max-width:100%}</style>
+<title>Osservatorio Infortuni Brescia Bergamo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo+Narrow:wght@500;600;700&display=swap">
+</head>
+<body>
+<style>
+/* Layout: barra fissa con pagine + territorio, riga filtri, poi quadro di confronto e griglia di grafici a due colonne */
+:root {
+  --bg: #f4f5f7;
+  --panel: #ffffff;
+  --ink: #15191f;
+  --ink-2: #4a5260;
+  --ink-3: #7a8291;
+  --line: #dde1e7;
+  --grid: #eceef2;
+  --accent: #1d4e89;
+  --accent-soft: #e3ebf5;
+  --warn-bg: #fff4d6;
+  --warn-ink: #6b4a00;
+  --up: #b3261e;
+  --down: #1f7a3a;
+  /* serie (palette validata): anni e genere */
+  --s-blue: #2a78d6; --s-orange: #eb6834; --s-aqua: #1baf7a; --s-yellow: #eda100;
+  --s-magenta: #e87ba4; --s-violet: #4a3aa7;
+  --f-display: "Archivo Narrow", "Arial Narrow", "Roboto Condensed", sans-serif;
+  --f-body: "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #121418; --panel: #1b1e24; --ink: #eef0f3; --ink-2: #b8bfca; --ink-3: #8a93a1;
+    --line: #2d323b; --grid: #262a31; --accent: #8db4e8; --accent-soft: #23324a;
+    --warn-bg: #3a2f12; --warn-ink: #f3d68a; --up: #f08a83; --down: #6fcf8c;
+    --s-blue: #3987e5; --s-orange: #d95926; --s-aqua: #199e70; --s-yellow: #c98500;
+    --s-magenta: #d55181; --s-violet: #9085e9;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #121418; --panel: #1b1e24; --ink: #eef0f3; --ink-2: #b8bfca; --ink-3: #8a93a1;
+  --line: #2d323b; --grid: #262a31; --accent: #8db4e8; --accent-soft: #23324a;
+  --warn-bg: #3a2f12; --warn-ink: #f3d68a; --up: #f08a83; --down: #6fcf8c;
+  --s-blue: #3987e5; --s-orange: #d95926; --s-aqua: #199e70; --s-yellow: #c98500;
+  --s-magenta: #d55181; --s-violet: #9085e9;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 14px; line-height: 1.45; }
+.wrap { max-width: 1320px; margin: 0 auto; padding-inline: 20px; padding-block: 0 48px; }
+h1, h2, h3 { font-family: var(--f-display); margin: 0; text-wrap: balance; letter-spacing: .01em; }
+.num { font-variant-numeric: tabular-nums; }
+
+/* Barra superiore */
+.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; background: var(--panel); border-bottom: 1px solid var(--line); }
+.top-in { max-width: 1320px; margin: 0 auto; padding: 10px 20px; display: flex; flex-wrap: wrap; align-items: center; gap: 12px 24px; }
+.brand { display: flex; flex-direction: column; min-width: 0; }
+.brand b { font-family: var(--f-display); font-size: 19px; font-weight: 700; line-height: 1.1; }
+.brand span { font-size: 12px; color: var(--ink-3); }
+.tabs, .seg { display: flex; gap: 2px; background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 3px; }
+.tabs a, .seg button { font: 600 13px/1 var(--f-body); color: var(--ink-2); text-decoration: none; padding: 8px 12px; border-radius: 6px; border: 0; background: transparent; cursor: pointer; white-space: nowrap; }
+.tabs a[aria-current="page"], .seg button[aria-pressed="true"] { background: var(--panel); color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,.12); }
+.tabs a:hover, .seg button:hover { color: var(--ink); }
+.seg-label { font: 600 11px/1 var(--f-body); text-transform: uppercase; letter-spacing: .08em; color: var(--ink-3); }
+.terr { display: flex; align-items: center; gap: 10px; margin-left: auto; flex-wrap: wrap; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.demo { background: var(--warn-bg); color: var(--warn-ink); font-size: 13px; padding: 8px 20px; text-align: center; }
+.demo b { font-weight: 700; }
+
+/* Intestazione pagina */
+.head { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 8px 24px; padding-block: 22px 14px; }
+.head h1 { font-size: clamp(24px, 3.2vw, 32px); font-weight: 700; }
+.head p { margin: 4px 0 0; color: var(--ink-2); max-width: 70ch; }
+.meta { font-size: 12px; color: var(--ink-3); text-align: right; }
+.meta b { color: var(--ink-2); font-weight: 600; }
+
+/* Filtri */
+.filters { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; display: flex; flex-wrap: wrap; gap: 12px 22px; align-items: flex-start; }
+.fgroup { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.fgroup > .seg-label { padding-left: 2px; }
+.chips { display: flex; flex-wrap: wrap; gap: 4px; }
+.chip { font: 500 12.5px/1 var(--f-body); color: var(--ink-2); background: var(--panel); border: 1px solid var(--line); border-radius: 999px; padding: 6px 10px; cursor: pointer; }
+.chip:hover { border-color: var(--ink-3); }
+.chip[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--panel); }
+.filtri-sticky { position: sticky; top: var(--top-h, 60px); z-index: 15; background: var(--bg); padding-block: 8px; margin-block: -8px; }
+.filtri-sticky.staccato .filters, .filtri-sticky.staccato .filtri-compatti { box-shadow: 0 6px 18px rgba(0,0,0,.18); }
+.filtri-azioni { margin-left: auto; align-self: center; display: flex; gap: 6px; }
+.filtri-compatti { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 8px 14px; display: flex; align-items: center; gap: 8px 14px; flex-wrap: wrap; }
+.filtri-compatti .riepilogo { flex: 1 1 260px; min-width: 0; font-size: 13px; color: var(--ink-2); }
+.filtri-compatti .riepilogo b { color: var(--ink); font-weight: 600; }
+.link-btn { font: 600 12.5px var(--f-body); color: var(--accent); background: none; border: 0; cursor: pointer; padding: 4px; }
+.link-btn:disabled { color: var(--ink-3); cursor: default; }
+.reset { align-self: center; font: 600 12.5px/1 var(--f-body); color: var(--accent); background: none; border: 1px solid var(--line); border-radius: 6px; padding: 8px 12px; cursor: pointer; }
+.reset:disabled { color: var(--ink-3); cursor: default; opacity: .6; }
+details.ateco { position: relative; }
+details.ateco summary { list-style: none; cursor: pointer; font: 500 12.5px/1 var(--f-body); color: var(--ink-2); border: 1px solid var(--line); border-radius: 6px; padding: 7px 28px 7px 10px; position: relative; max-width: 280px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+details.ateco summary::after { content: "▾"; position: absolute; right: 10px; top: 6px; color: var(--ink-3); }
+details.ateco[open] summary { border-color: var(--accent); }
+.ateco-pop { position: absolute; z-index: 30; top: calc(100% + 4px); left: 0; width: min(560px, calc(100vw - 32px)); background: var(--panel); border: 1px solid var(--line); border-radius: 10px; box-shadow: 0 12px 32px rgba(0,0,0,.28); padding: 10px; }
+.ateco-pop input[type="search"] { width: 100%; font: 13px var(--f-body); padding: 8px 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); color: var(--ink); }
+.ateco-list { max-height: min(420px, calc(100vh - var(--top-h, 60px) - 260px)); overflow: auto; margin-top: 8px; overscroll-behavior: contain; }
+.ateco-sez { position: sticky; top: 0; z-index: 1; display: flex; align-items: center; justify-content: space-between; gap: 10px; background: var(--panel); padding: 9px 4px 5px; border-bottom: 1px solid var(--line); font-size: 11.5px; color: var(--ink-3); text-transform: uppercase; letter-spacing: .04em; }
+.ateco-sez b { color: var(--ink); font-size: 12px; margin-right: 4px; }
+.ateco-sez button { flex: none; font: 600 11.5px var(--f-body); text-transform: none; letter-spacing: 0; color: var(--accent); background: none; border: 0; cursor: pointer; padding: 2px 4px; }
+.ateco-list label { display: grid; grid-template-columns: 16px 3.4em minmax(0, 1fr) auto; column-gap: 10px; align-items: baseline; text-align: left; padding: 6px 4px; font-size: 13px; line-height: 1.35; border-radius: 4px; cursor: pointer; }
+.ateco-list label:hover { background: var(--bg); }
+.ateco-list label.zero .des, .ateco-list label.zero .cod { color: var(--ink-3); }
+.ateco-list input[type="checkbox"] { width: 15px; height: 15px; margin: 0; align-self: center; accent-color: var(--accent); }
+.ateco-list .cod { font-weight: 600; color: var(--ink); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.ateco-list .des { color: var(--ink-2); }
+.ateco-list .cnt { color: var(--ink-3); font-size: 12px; font-variant-numeric: tabular-nums; text-align: right; }
+.ateco-vuoto { color: var(--ink-3); padding: 16px 4px; margin: 0; }
+.ateco-act { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--line); font-size: 12px; color: var(--ink-3); }
+.ateco-act button { font: 600 12px var(--f-body); color: var(--accent); background: none; border: 0; cursor: pointer; padding: 4px; }
+
+/* Sezioni */
+section { margin-top: 18px; }
+.sec-h { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 16px; margin-bottom: 10px; }
+.sec-h h2 { font-size: 20px; font-weight: 700; }
+.sec-h p { margin: 0; color: var(--ink-3); font-size: 12.5px; }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; min-width: 0; }
+.panel h3 { font-size: 16px; font-weight: 700; }
+.panel .sub { font-size: 12px; color: var(--ink-3); margin: 2px 0 10px; }
+.grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.grid3 { display: grid; grid-template-columns: repeat(var(--cols, 3), minmax(0, 1fr)); gap: 14px; }
+@media (max-width: 900px) { .grid2, .grid3 { grid-template-columns: minmax(0, 1fr); } }
+
+/* KPI */
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 14px; }
+.kpi { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; }
+.kpi .lab { font: 600 11px/1.2 var(--f-body); text-transform: uppercase; letter-spacing: .08em; color: var(--ink-3); display: flex; align-items: center; gap: 6px; }
+.kpi .lab i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+.kpi .val { font-family: var(--f-display); font-size: 34px; font-weight: 700; line-height: 1.1; margin-top: 6px; font-variant-numeric: tabular-nums; }
+.kpi .d { font-size: 12.5px; color: var(--ink-2); margin-top: 2px; font-variant-numeric: tabular-nums; }
+.delta { font-weight: 700; }
+.delta.up { color: var(--up); } .delta.down { color: var(--down); }
+
+/* Tabella di confronto */
+.tscroll { overflow-x: auto; }
+table.cmp { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; min-width: 720px; }
+.cmp th, .cmp td { padding: 9px 10px; text-align: right; border-bottom: 1px solid var(--grid); white-space: nowrap; }
+.cmp th { font: 600 11px/1.2 var(--f-body); text-transform: uppercase; letter-spacing: .06em; color: var(--ink-3); vertical-align: bottom; }
+.cmp th:first-child, .cmp td:first-child { text-align: left; }
+.cmp tbody tr { cursor: pointer; }
+.cmp tbody tr:hover { background: var(--bg); }
+.cmp tbody tr.sel { background: var(--accent-soft); }
+.cmp tbody tr.sel td:first-child { font-weight: 700; }
+.cmp td.terr-n { font-family: var(--f-display); font-size: 15px; font-weight: 600; }
+.cmp .grp { border-left: 1px solid var(--line); }
+.quota-di { font-size: 11.5px; color: var(--ink-3); }
+
+.chart { position: relative; width: 100%; }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12px; color: var(--ink-2); margin-bottom: 6px; }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; }
+.note { font-size: 12px; color: var(--ink-3); margin-top: 8px; }
+.empty { padding: 40px 10px; text-align: center; color: var(--ink-3); }
+.errori { margin: 12px 0 0; padding: 10px 14px; border: 1px solid var(--up); border-radius: 8px; color: var(--up); background: var(--panel); white-space: pre-wrap; font: 12.5px/1.4 ui-monospace, Consolas, monospace; }
+.foot { margin-top: 28px; font-size: 12px; color: var(--ink-3); border-top: 1px solid var(--line); padding-top: 12px; display: flex; flex-wrap: wrap; gap: 6px 20px; justify-content: space-between; }
+.foot a { color: var(--accent); }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+
+<header class="top">
+  <div class="top-in">
+    <div class="brand"><b>Osservatorio infortuni</b><span>Italia · Lombardia · Brescia · Bergamo</span></div>
+    <nav class="tabs" aria-label="Dataset">
+      <a href="#semestrale" id="tab-semestrale">Semestrale · denunce ed esiti</a>
+      <a href="#mensile" id="tab-mensile">Mensile · denunce</a>
+    </nav>
+    <div class="terr">
+      <span class="seg-label">Territorio</span>
+      <div class="seg" id="terr-seg" role="group" aria-label="Territorio"></div>
+    </div>
+  </div>
+  <div class="demo" id="demo" hidden><b>Dati di esempio.</b> Numeri inventati per provare il portale: per i dati veri esegui <code>scarica_inail.py</code>.</div>
+</header>
+
+<main class="wrap">
+  <div class="head">
+    <div>
+      <h1 id="page-title">Infortuni sul lavoro</h1>
+      <p id="page-desc"></p>
+    </div>
+    <div class="meta" id="meta"></div>
+  </div>
+
+  <div class="filtri-sticky" id="filtri-sticky">
+    <div class="filters" id="filters"></div>
+    <div class="filtri-compatti" id="filtri-compatti" hidden>
+      <span class="seg-label">Filtri</span>
+      <span class="riepilogo" id="riepilogo"></span>
+      <button type="button" class="link-btn" id="azzera-c">Azzera</button>
+      <button type="button" class="reset" id="espandi">Mostra filtri ▾</button>
+    </div>
+  </div>
+  <pre class="errori" id="errori" hidden></pre>
+
+  <section>
+    <div class="sec-h"><h2>Confronto tra territori</h2><p>Stessi filtri per tutti e quattro · clicca una riga per cambiare territorio</p></div>
+    <div class="panel tscroll"><table class="cmp" id="cmp"></table></div>
+  </section>
+
+  <section>
+    <div class="sec-h"><h2 id="kpi-title">Totale eventi</h2><p id="kpi-sub"></p></div>
+    <div class="kpis" id="kpis"></div>
+  </section>
+
+  <section>
+    <div class="sec-h"><h2>Classe d'età per genere</h2><p>Quota di femmine e maschi in ogni classe d'età</p></div>
+    <div class="grid3" id="eta-genere"></div>
+  </section>
+
+  <section class="grid2">
+    <div class="panel">
+      <h3>Distribuzione per classe d'età</h3>
+      <p class="sub">Quota sul totale dell'anno</p>
+      <div class="legend" id="leg-eta"></div>
+      <div class="chart" style="height:440px"><canvas id="c-eta"></canvas></div>
+    </div>
+    <div class="panel">
+      <h3>Top 10 attività economiche (Ateco)</h3>
+      <p class="sub">Ordinate sull'anno più recente</p>
+      <div class="legend" id="leg-ateco"></div>
+      <div class="chart" style="height:440px"><canvas id="c-ateco"></canvas></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-h"><h2>Genere e gestione tariffaria</h2><p>Il dataset INAIL non contiene la dimensione aziendale: qui la gestione tariffaria per genere</p></div>
+    <div class="grid3" id="gest-genere"></div>
+  </section>
+
+  <section class="grid2">
+    <div class="panel">
+      <h3>Giorno della settimana</h3>
+      <p class="sub">Ricavato dalla data di accadimento. L'ora non è presente nel dataset.</p>
+      <div class="legend" id="leg-giorno"></div>
+      <div class="chart" style="height:300px"><canvas id="c-giorno"></canvas></div>
+    </div>
+    <div class="panel">
+      <h3 id="mese-title">Andamento mensile</h3>
+      <p class="sub" id="mese-sub">Per mese di accadimento</p>
+      <div class="legend" id="leg-mese"></div>
+      <div class="chart" style="height:300px"><canvas id="c-mese"></canvas></div>
+    </div>
+  </section>
+
+  <section id="sec-esito" hidden>
+    <div class="panel">
+      <h3>Esito della definizione amministrativa</h3>
+      <p class="sub">Quota di casi per esito, per anno. Utile per leggere i totali: non tutte le denunce diventano infortuni riconosciuti.</p>
+      <div class="legend" id="leg-esito"></div>
+      <div class="chart" style="height:200px"><canvas id="c-esito"></canvas></div>
+    </div>
+  </section>
+
+  <footer class="foot">
+    <span>Fonte: <a href="https://dati.inail.it/portale/it/dataset/open-api.html" target="_blank" rel="noopener">INAIL Open Data – Open API</a> · Licenza IODL 2.0</span>
+    <span id="foot-gen"></span>
+  </footer>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+(() => {
+const TERR = ["Italia", "Lombardia", "Brescia", "Bergamo"];
+const MESI_LUNGHI = ["gennaio","febbraio","marzo","aprile","maggio","giugno","luglio","agosto","settembre","ottobre","novembre","dicembre"];
+const FILTRI = [
+  { dim: "genere",   label: "Genere" },
+  { dim: "modalita", label: "Accadimento", short: v => v.split(" – ")[0] },
+  { dim: "naz",      label: "Nazionalità", short: v => v.split(" – ")[0] },
+  { dim: "gestione", label: "Gestione" },
+  { dim: "gest",     label: "Gestione tariffaria" },
+  { dim: "esito",    label: "Esito definizione", only: "semestrale" },
+];
+const PAGINE = {
+  semestrale: {
+    titolo: "Denunce ed esiti · ultimo triennio",
+    desc: "Dataset semestrale: tutte le denunce di infortunio accadute negli anni completi, ciascuna con l'esito della definizione amministrativa. Senza filtro Esito si vedono le denunce; con Positivo gli infortuni riconosciuti.",
+  },
+  mensile: {
+    titolo: "Denunce dell'anno in corso",
+    desc: "Dataset mensile: denunce registrate dall'inizio dell'anno, confrontate con lo stesso periodo dell'anno precedente. Dati provvisori.",
+  },
+};
+
+const fmt = new Intl.NumberFormat("it-IT");
+const fmtK = n => n >= 10000 ? new Intl.NumberFormat("it-IT", { maximumFractionDigits: 2 }).format(n / 1000) + "K" : fmt.format(n);
+const pct = (x, d = 1) => isFinite(x) ? new Intl.NumberFormat("it-IT", { minimumFractionDigits: d, maximumFractionDigits: d }).format(x * 100) + "%" : "–";
+const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+
+const cache = {};
+let D = null, pagina = "semestrale", terr = 2;      // Brescia di default
+let tipo = "C";                                   // C = in complesso, MD = mortali denunciati, MA = mortali accertati
+const haAccertati = () => !!(D && D.cubi.base.col.ma);
+const sel = {};                                   // dim -> Set di indici selezionati (vuoto = tutti)
+const charts = {};
+
+async function carica(nome) {
+  if (!cache[nome]) {
+    const r = await fetch(`data/${nome}.json`);
+    if (!r.ok) throw new Error(`Impossibile leggere data/${nome}.json (HTTP ${r.status})`);
+    cache[nome] = await r.json();
+  }
+  return cache[nome];
+}
+
+/* ---------- motore di aggregazione ---------- */
+function filtroMaschere(cubo, escludiTerr) {
+  // per ogni dimensione filtrata: array booleano dei valori ammessi
+  const m = [];
+  for (const dim of cubo.dims) {
+    if (dim === "terr" && !escludiTerr) { const a = new Uint8Array(4); a[terr] = 1; m.push([cubo.col.terr, a]); continue; }
+    const s = sel[dim];
+    if (s && s.size) { const a = new Uint8Array(D.diz[dim].length); s.forEach(i => a[i] = 1); m.push([cubo.col[dim], a]); }
+  }
+  return m;
+}
+// somma n (e m, gi) raggruppando per le dimensioni indicate.
+// Chiave numerica (12 bit per dimensione) invece di stringhe: molto più veloce sui file grandi.
+const B = 4096;
+const chiave = k => k.reduce((acc, v) => acc * B + v, 0);
+function agg(nomeCubo, gruppo, { tuttiTerr = false } = {}) {
+  const c = D.cubi[nomeCubo], col = c.col, N = col.n.length;
+  const mas = filtroMaschere(c, tuttiTerr), nm = mas.length;
+  const gcols = gruppo.map(g => col[g]), ng = gcols.length;
+  const md = col.md || col.m, ma = col.ma || null;
+  const vn = tipo === "MD" ? md : tipo === "MA" && ma ? ma : col.n, vg = col.gi;
+  const out = new Map();
+  outer: for (let i = 0; i < N; i++) {
+    for (let k = 0; k < nm; k++) if (!mas[k][1][mas[k][0][i]]) continue outer;
+    let key = 0;
+    for (let g = 0; g < ng; g++) key = key * B + gcols[g][i];
+    let o = out.get(key);
+    if (!o) { o = { n: 0, md: 0, ma: 0, gi: 0 }; out.set(key, o); }
+    o.n += vn[i]; o.md += md[i]; if (ma) o.ma += ma[i]; o.gi += vg[i];
+  }
+  return out;
+}
+const VUOTO = Object.freeze({ n: 0, md: 0, ma: 0, gi: 0 });
+const get = (map, ...k) => map.get(chiave(k)) || VUOTO;
+
+/* ---------- colori ---------- */
+function coloriAnni() {
+  // anno più recente = arancio, precedente = blu, più vecchio = viola
+  const a = D.meta.anni, pal = [css("--s-violet"), css("--s-blue"), css("--s-orange")];
+  return Object.fromEntries(a.map((y, i) => [y, pal[pal.length - a.length + i]]));
+}
+const coloreGenere = g => g === "Femmine" ? css("--s-magenta") : g === "Maschi" ? css("--s-blue") : css("--ink-3");
+
+function chartBase() {
+  Chart.defaults.font.family = getComputedStyle(document.body).fontFamily;
+  Chart.defaults.font.size = 12;
+  Chart.defaults.devicePixelRatio = Math.max(window.devicePixelRatio || 1, 2);   // grafici nitidi anche su schermi a 100%
+  Chart.defaults.color = css("--ink-2");
+  Chart.defaults.borderColor = css("--grid");
+  Chart.defaults.animation = false;   // disegno immediato: niente grafici vuoti a metà animazione
+  Chart.defaults.plugins.legend.display = false;
+  Object.assign(Chart.defaults.plugins.tooltip, {
+    backgroundColor: css("--panel"), titleColor: css("--ink"), bodyColor: css("--ink-2"),
+    borderColor: css("--line"), borderWidth: 1, padding: 10, boxPadding: 4, usePointStyle: true,
+  });
+}
+function disegna(id, cfg) {
+  if (charts[id]) { charts[id].destroy(); delete charts[id]; }
+  const el = document.getElementById(id);
+  if (!el) return;
+  const vecchio = Chart.getChart(el);   // un grafico rimasto sulla tela senza riferimento
+  if (vecchio) vecchio.destroy();
+  charts[id] = new Chart(el, cfg);
+}
+function legenda(id, voci) {
+  document.getElementById(id).innerHTML = voci.map(([t, c]) => `<span><i style="background:${c}"></i>${t}</span>`).join("");
+}
+// etichette dentro le barre (plugin minimo, solo dove c'è spazio)
+const etichette = {
+  id: "etichette",
+  afterDatasetsDraw(chart, _a, opt) {
+    if (!opt || !opt.on) return;
+    const { ctx } = chart;
+    ctx.save();
+    ctx.font = `600 11px ${Chart.defaults.font.family}`;
+    ctx.textBaseline = "middle";
+    chart.data.datasets.forEach((ds, di) => {
+      const meta = chart.getDatasetMeta(di);
+      if (meta.hidden) return;
+      meta.data.forEach((el, i) => {
+        const v = ds.data[i]; if (!v) return;
+        const txt = opt.format(v, ds, i);
+        const w = ctx.measureText(txt).width;
+        if (opt.inside) {
+          const { x, y, base, width, height } = el.getProps(["x", "y", "base", "width", "height"], true);
+          const horiz = chart.options.indexAxis === "y";
+          const len = horiz ? Math.abs(x - base) : Math.abs(base - y);
+          const thick = horiz ? height : width;
+          if (len < w + 8 || thick < 13) return;
+          ctx.fillStyle = "#fff"; ctx.textAlign = "center";
+          if (horiz) ctx.fillText(txt, (x + base) / 2, y); else ctx.fillText(txt, x, (y + base) / 2);
+        } else {
+          const { x, y } = el.getProps(["x", "y"], true);
+          ctx.fillStyle = css("--ink-2"); ctx.textAlign = "left";
+          ctx.fillText(txt, x + 5, y);
+        }
+      });
+    });
+    ctx.restore();
+  },
+};
+
+/* ---------- interfaccia ---------- */
+function costruisciTerritori() {
+  const box = document.getElementById("terr-seg");
+  box.innerHTML = TERR.map((t, i) => `<button type="button" id="terr-${i}" aria-pressed="${i === terr}">${t}</button>`).join("");
+  box.querySelectorAll("button").forEach((b, i) => b.onclick = () => { terr = i; aggiorna(); });
+}
+function costruisciFiltri() {
+  const box = document.getElementById("filters");
+  let h = `<div class="fgroup"><span class="seg-label">Tipologia</span><div class="chips">` +
+    [["C", "C – In complesso"], ["MD", "M – Mortali denunciati"], ...(haAccertati() ? [["MA", "M – Mortali accertati"]] : [])].map(([k, t]) =>
+      `<button type="button" class="chip tipo" id="tipo-${k}" data-k="${k}" aria-pressed="${tipo === k}">${t}</button>`).join("") +
+    `</div></div>`;
+  for (const f of FILTRI) {
+    if (f.only && f.only !== pagina) continue;
+    const vals = D.diz[f.dim]; if (!vals) continue;
+    h += `<div class="fgroup"><span class="seg-label">${f.label}</span><div class="chips">` +
+      vals.map((v, i) => `<button type="button" class="chip" id="f-${f.dim}-${i}" data-dim="${f.dim}" data-i="${i}" aria-pressed="${!!(sel[f.dim] && sel[f.dim].has(i))}" title="${v}">${f.short ? f.short(v) : v}</button>`).join("") +
+      `</div></div>`;
+  }
+  h += `<div class="fgroup"><span class="seg-label">Attività economica (Ateco)</span>
+    <details class="ateco" id="ateco-dd"><summary id="ateco-sum">Tutte</summary>
+      <div class="ateco-pop"><input type="search" id="ateco-q" placeholder="Cerca codice o descrizione" aria-label="Cerca Ateco">
+      <div class="ateco-list" id="ateco-list"></div>
+      <div class="ateco-act"><button type="button" id="ateco-none">Togli selezione</button><span>Casi nell'ultimo anno, con i filtri attivi</span><button type="button" id="ateco-close">Chiudi</button></div></div>
+    </details></div>`;
+  h += `<div class="filtri-azioni"><button type="button" class="reset" id="reset">Azzera filtri</button><button type="button" class="reset" id="riduci" title="Riduci i filtri a una riga">Riduci ▴</button></div>`;
+  box.innerHTML = h;
+
+  box.querySelectorAll(".chip.tipo").forEach(b => b.onclick = () => {
+    tipo = b.dataset.k;
+    box.querySelectorAll(".chip.tipo").forEach(x => x.setAttribute("aria-pressed", x.dataset.k === tipo));
+    aggiorna();
+  });
+  box.querySelectorAll(".chip:not(.tipo)").forEach(b => b.onclick = () => {
+    const d = b.dataset.dim, i = +b.dataset.i;
+    sel[d] = sel[d] || new Set();
+    sel[d].has(i) ? sel[d].delete(i) : sel[d].add(i);
+    b.setAttribute("aria-pressed", sel[d].has(i));
+    aggiorna();
+  });
+  const lista = document.getElementById("ateco-list");
+  sel.ateco = sel.ateco || new Set();
+  const voci = D.diz.ateco.map((v, i) => ({ i, ...dividiAteco(v), testo: v.toLowerCase() }));
+  const disegnaAteco = (q = "") => {
+    q = q.trim().toLowerCase();
+    // conteggi dell'ultimo anno con i filtri attuali, escluso il filtro Ateco stesso
+    const salvati = new Set(sel.ateco); sel.ateco.clear();
+    const ult = D.meta.anni[D.meta.anni.length - 1];
+    const cont = agg("base", ["anno", "ateco"]);
+    salvati.forEach(i => sel.ateco.add(i));
+    let h = "", sezCorr = null;
+    const visibili = voci.filter(v => !q || v.testo.includes(q));
+    for (const v of visibili) {
+      if (v.sez !== sezCorr) {
+        sezCorr = v.sez;
+        const nSez = visibili.filter(x => x.sez === v.sez);
+        const tutte = nSez.every(x => sel.ateco.has(x.i));
+        h += `<div class="ateco-sez"><span><b>${v.sez}</b> ${SEZIONI_ATECO[v.sez] || ""}</span>` +
+             (nSez.length > 1 ? `<button type="button" data-sez="${v.sez}">${tutte ? "Togli sezione" : "Tutta la sezione"}</button>` : "") + `</div>`;
+      }
+      const n = get(cont, ult, v.i).n;
+      h += `<label class="${n ? "" : "zero"}"><input type="checkbox" id="at-${v.i}" data-i="${v.i}" ${sel.ateco.has(v.i) ? "checked" : ""}>` +
+           `<span class="cod">${v.cod}</span><span class="des">${v.des}</span><span class="cnt">${n ? fmt.format(n) : "–"}</span></label>`;
+    }
+    lista.innerHTML = h || `<p class="ateco-vuoto">Nessuna attività trovata per “${q}”.</p>`;
+  };
+  disegnaAteco();
+  document.getElementById("ateco-dd").addEventListener("toggle", e => {
+    if (!e.target.open) return;
+    disegnaAteco(document.getElementById("ateco-q").value);
+    // il riquadro non deve uscire dallo schermo a destra
+    const pop = e.target.querySelector(".ateco-pop");
+    pop.style.left = "0px";
+    const r = pop.getBoundingClientRect(), maxR = document.documentElement.clientWidth - 16;
+    if (r.right > maxR) pop.style.left = `${Math.min(0, maxR - r.right)}px`;
+    document.getElementById("ateco-q").focus();
+  });
+  document.getElementById("ateco-q").oninput = e => disegnaAteco(e.target.value);
+  lista.onchange = e => { const i = +e.target.dataset.i; e.target.checked ? sel.ateco.add(i) : sel.ateco.delete(i); statoFiltri(); aggiorna(); };
+  lista.onclick = e => {
+    const b = e.target.closest("button[data-sez]"); if (!b) return;
+    const q = document.getElementById("ateco-q").value.trim().toLowerCase();
+    const ids = voci.filter(v => v.sez === b.dataset.sez && (!q || v.testo.includes(q))).map(v => v.i);
+    const tutte = ids.every(i => sel.ateco.has(i));
+    ids.forEach(i => tutte ? sel.ateco.delete(i) : sel.ateco.add(i));
+    disegnaAteco(q); aggiorna();
+  };
+  document.getElementById("ateco-none").onclick = () => { sel.ateco.clear(); disegnaAteco(document.getElementById("ateco-q").value); aggiorna(); };
+  document.getElementById("ateco-close").onclick = () => document.getElementById("ateco-dd").open = false;
+  document.getElementById("reset").onclick = () => { for (const k in sel) sel[k].clear(); tipo = "C"; costruisciFiltri(); aggiorna(); };
+  document.getElementById("riduci").onclick = () => impostaRidotti(true);
+}
+const SEZIONI_ATECO = {
+  A: "Agricoltura, silvicoltura e pesca", B: "Estrazione di minerali da cave e miniere", C: "Attività manifatturiere",
+  D: "Fornitura di energia elettrica, gas, vapore e aria condizionata", E: "Fornitura di acqua, reti fognarie, gestione dei rifiuti",
+  F: "Costruzioni", G: "Commercio all'ingrosso e al dettaglio, riparazione di veicoli", H: "Trasporto e magazzinaggio",
+  I: "Alloggio e ristorazione", J: "Informazione e comunicazione", K: "Attività finanziarie e assicurative",
+  L: "Attività immobiliari", M: "Attività professionali, scientifiche e tecniche", N: "Noleggio, agenzie di viaggio, servizi alle imprese",
+  O: "Amministrazione pubblica e difesa", P: "Istruzione", Q: "Sanità e assistenza sociale",
+  R: "Attività artistiche, sportive e di intrattenimento", S: "Altre attività di servizi", T: "Famiglie come datori di lavoro",
+  U: "Organizzazioni extraterritoriali", X: "Non determinato",
+};
+// "C 25 Fabbricazione…" -> {sez:"C", cod:"C 25", des:"Fabbricazione…"};  "F Costruzioni" -> {sez:"F", cod:"F", …}
+function dividiAteco(v) {
+  const m = /^([A-Z])(?:\s+(\d{2}))?\s+(.*)$/.exec(v);
+  if (!m) return { sez: "?", cod: v, des: "" };
+  return { sez: m[1], cod: m[2] ? `${m[1]} ${m[2]}` : m[1], des: m[3] };
+}
+function statoFiltri() {
+  const n = Object.values(sel).reduce((a, s) => a + s.size, 0) + (tipo !== "C" ? 1 : 0);
+  document.getElementById("reset").disabled = n === 0;
+  const s = sel.ateco;
+  document.getElementById("ateco-sum").textContent = !s.size ? "Tutte" : s.size === 1 ? D.diz.ateco[[...s][0]] : `${s.size} selezionate`;
+  // riepilogo per la barra ridotta
+  const parti = [];
+  if (tipo !== "C") parti.push(`<b>${tipo === "MD" ? "Mortali denunciati" : "Mortali accertati"}</b>`);
+  for (const f of FILTRI) {
+    const sf = sel[f.dim];
+    if (!sf || !sf.size || !D.diz[f.dim]) continue;
+    parti.push(`${f.label}: <b>${[...sf].map(i => f.short ? f.short(D.diz[f.dim][i]) : D.diz[f.dim][i]).join(", ")}</b>`);
+  }
+  if (s.size) parti.push(`Ateco: <b>${s.size === 1 ? D.diz.ateco[[...s][0]].slice(0, 40) : s.size + " selezionate"}</b>`);
+  document.getElementById("riepilogo").innerHTML = `<b>${TERR[terr]}</b> · ` + (parti.length ? parti.join(" · ") : "nessun filtro attivo");
+  document.getElementById("azzera-c").disabled = n === 0;
+}
+function impostaRidotti(ridotti) {
+  document.getElementById("filters").hidden = ridotti;
+  document.getElementById("filtri-compatti").hidden = !ridotti;
+  try { localStorage.setItem("filtri-ridotti", ridotti ? "1" : "0"); } catch (e) {}
+}
+
+/* ---------- sezioni ---------- */
+function quadroConfronto() {
+  const anni = D.meta.anni, ult = anni[anni.length - 1], prec = anni[anni.length - 2];
+  const tot = agg("base", ["terr", "anno"], { tuttiTerr: true });
+  const perAnno = (dim) => agg("base", ["terr", "anno", dim], { tuttiTerr: true });
+  const g = perAnno("genere"), mo = perAnno("modalita"), nz = perAnno("naz");
+  const iF = D.diz.genere.indexOf("Femmine"), iM = D.diz.genere.indexOf("Maschi");
+  const iIT = D.diz.modalita.findIndex(v => v.startsWith("IT"));
+  const iITA = D.diz.naz.findIndex(v => v.startsWith("ITA"));
+  const iND = D.diz.naz.findIndex(v => v.startsWith("Non"));
+  // quota sul territorio che lo contiene: Lombardia su Italia, province su Lombardia
+  const PADRE = { 1: 0, 2: 1, 3: 1 };
+
+  let h = `<thead><tr><th>Territorio</th>${anni.map(a => `<th>${a}</th>`).join("")}
+    <th class="grp">Quota<br>${ult}</th><th class="grp">Var. ${prec ?? ""}→${ult}</th><th class="grp">Maschi<br>${ult}</th><th>Femmine<br>${ult}</th><th>In itinere<br>${ult}</th><th>Nati all'estero<br>${ult}</th><th class="grp">Mortali<br>denunciati ${ult}</th>${haAccertati() ? `<th>Mortali<br>accertati ${ult}</th>` : ""}</tr></thead><tbody>`;
+  TERR.forEach((nome, t) => {
+    const nU = get(tot, t, ult).n, nP = prec != null ? get(tot, t, prec).n : 0;
+    const v = nP ? nU / nP - 1 : NaN;
+    const f = iF >= 0 ? get(g, t, ult, iF).n / nU : NaN;
+    const ma = iM >= 0 ? get(g, t, ult, iM).n / nU : NaN;
+    const it = iIT >= 0 ? get(mo, t, ult, iIT).n / nU : NaN;
+    const est = (nU - (iITA >= 0 ? get(nz, t, ult, iITA).n : 0) - (iND >= 0 ? get(nz, t, ult, iND).n : 0)) / nU;
+    const mD = get(tot, t, ult).md, mA = get(tot, t, ult).ma;
+    h += `<tr class="${t === terr ? "sel" : ""}" data-t="${t}" tabindex="0">
+      <td class="terr-n">${nome}</td>
+      ${anni.map(a => a === ult ? `<td><b>${fmt.format(get(tot, t, a).n)}</b></td>` : `<td>${fmt.format(get(tot, t, a).n)}</td>`).join("")}
+      <td class="grp">${quotaHtml(t, nU)}</td>
+      <td class="grp">${deltaHtml(v)}</td>
+      <td class="grp">${pct(ma)}</td><td>${pct(f)}</td><td>${pct(it)}</td><td>${pct(est)}</td>
+      <td class="grp">${fmt.format(mD)}</td>${haAccertati() ? `<td>${fmt.format(mA)}</td>` : ""}</tr>`;
+  });
+  h += `</tbody>`;
+  function quotaHtml(t, n) {
+    if (!(t in PADRE)) return `<span class="quota-di">riferimento</span>`;
+    const pT = PADRE[t], nPadre = get(tot, pT, ult).n, nIt = get(tot, 0, ult).n;
+    const sec = pT !== 0 ? `<span class="quota-di">${pct(n / nIt)} d'Italia</span>` : "";
+    return `${pct(n / nPadre)} <span class="quota-di">${pT === 0 ? "d'Italia" : "della " + TERR[pT]}</span>${sec ? "<br>" + sec : ""}`;
+  }
+  const tb = document.getElementById("cmp");
+  tb.innerHTML = h;
+  tb.querySelectorAll("tbody tr").forEach(r => {
+    r.onclick = () => { terr = +r.dataset.t; aggiorna(); };
+    r.onkeydown = e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); r.click(); } };
+  });
+}
+function deltaHtml(v) {
+  if (!isFinite(v)) return "–";
+  const s = (v > 0 ? "+" : "") + pct(v);
+  return `<span class="delta ${v > 0 ? "up" : v < 0 ? "down" : ""}">${v > 0 ? "▲" : v < 0 ? "▼" : ""} ${s}</span>`;
+}
+
+function kpi() {
+  const anni = D.meta.anni, col = coloriAnni();
+  const tot = agg("base", ["anno"]);
+  const cosa = tipo === "MD" ? "Mortali denunciati" : tipo === "MA" ? "Mortali accertati" : "Totale eventi";
+  document.getElementById("kpi-title").textContent = `${cosa} · ${TERR[terr]}`;
+  document.getElementById("kpi-sub").textContent = pagina === "mensile" ? `Periodo ${periodo()}` : "Anno di accadimento";
+  document.getElementById("kpis").innerHTML = anni.slice().reverse().map((a, idx, arr) => {
+    const n = get(tot, a).n, p = arr[idx + 1] != null ? get(tot, arr[idx + 1]).n : 0;
+    const r = get(tot, a);
+    return `<div class="kpi"><div class="lab"><i style="background:${col[a]}"></i>${cosa} ${a}</div>
+      <div class="val">${fmtK(n)}</div>
+      <div class="d">${p ? `${deltaHtml(n / p - 1)} sull'anno prima` : "&nbsp;"}</div>
+      <div class="d">${tipo !== "C" ? (tipo === "MA" ? "esito mortale riconosciuto da INAIL" : "denunce con data di morte") : `${fmt.format(r.md)} mortali denunciati${haAccertati() ? `, ${fmt.format(r.ma)} accertati` : ""}`}</div></div>`;
+  }).join("");
+}
+
+function smallMultiples(boxId, prefisso, costruisci) {
+  const anni = D.meta.anni.slice().reverse();
+  const box = document.getElementById(boxId);
+  box.style.setProperty("--cols", anni.length);
+  if (box.dataset.k !== anni.join()) {
+    box.innerHTML = anni.map(a => `<div class="panel"><h3 id="${prefisso}-h-${a}"></h3><p class="sub" id="${prefisso}-s-${a}"></p>
+      <div class="legend" id="${prefisso}-l-${a}"></div><div class="chart" style="height:${prefisso === "eg" ? 420 : 300}px"><canvas id="${prefisso}-${a}"></canvas></div></div>`).join("");
+    box.dataset.k = anni.join();
+    Object.keys(charts).filter(k => k.startsWith(prefisso + "-")).forEach(k => { charts[k].destroy(); delete charts[k]; });
+  }
+  anni.forEach(a => costruisci(a));
+}
+
+function etaGenere() {
+  const map = agg("eta", ["anno", "eta", "genere"]);
+  const tot = agg("eta", ["anno", "eta"]);
+  const totAnno = agg("eta", ["anno"]);
+  const generi = D.diz.genere.filter(g => g !== "Non determinato");
+  smallMultiples("eta-genere", "eg", a => {
+    const classi = D.diz.eta.map((c, i) => [c, i]).filter(([, i]) => get(tot, a, i).n > 0);
+    document.getElementById(`eg-h-${a}`).textContent = `${TERR[terr]} ${a}`;
+    document.getElementById(`eg-s-${a}`).textContent = `${fmt.format(get(totAnno, a).n)} eventi`;
+    legenda(`eg-l-${a}`, generi.map(g => [g, coloreGenere(g)]));
+    disegna(`eg-${a}`, {
+      type: "bar",
+      data: {
+        labels: classi.map(([c]) => c),
+        datasets: generi.map(g => {
+          const gi = D.diz.genere.indexOf(g);
+          return {
+            label: g, backgroundColor: coloreGenere(g), borderColor: css("--panel"), borderWidth: { right: 2 }, borderSkipped: false,
+            data: classi.map(([, i]) => { const t = get(tot, a, i).n; return t ? get(map, a, i, gi).n / t : 0; }),
+            conteggi: classi.map(([, i]) => get(map, a, i, gi).n),
+          };
+        }),
+      },
+      options: {
+        indexAxis: "y", responsive: true, maintainAspectRatio: false,
+        scales: { x: { stacked: true, max: 1, ticks: { callback: v => pct(v, 0) }, grid: { display: false } },
+                  y: { stacked: true, grid: { display: false }, ticks: { font: { size: 11 } } } },
+        plugins: {
+          tooltip: { callbacks: { label: c => ` ${c.dataset.label}: ${pct(c.raw)} (${fmt.format(c.dataset.conteggi[c.dataIndex])})` } },
+          etichette: { on: true, inside: true, format: v => pct(v) },
+        },
+      },
+      plugins: [etichette],
+    });
+  });
+}
+
+function distribEta() {
+  const anni = D.meta.anni, col = coloriAnni();
+  const map = agg("eta", ["anno", "eta"]);
+  const tot = agg("base", ["anno"]);
+  const classi = D.diz.eta.map((c, i) => [c, i]).filter(([, i]) => anni.some(a => get(map, a, i).n));
+  legenda("leg-eta", anni.map(a => [a, col[a]]));
+  disegna("c-eta", {
+    type: "bar",
+    data: {
+      labels: classi.map(([c]) => c),
+      datasets: anni.map(a => ({
+        label: String(a), backgroundColor: col[a], borderRadius: 3, barPercentage: .9, categoryPercentage: .8,
+        data: classi.map(([, i]) => get(tot, a).n ? get(map, a, i).n / get(tot, a).n : 0),
+        conteggi: classi.map(([, i]) => get(map, a, i).n),
+      })),
+    },
+    options: {
+      indexAxis: "y", responsive: true, maintainAspectRatio: false,
+      scales: { x: { ticks: { callback: v => pct(v, 0) } }, y: { grid: { display: false }, ticks: { font: { size: 11 } } } },
+      plugins: { tooltip: { callbacks: { label: c => ` ${c.dataset.label}: ${pct(c.raw)} (${fmt.format(c.dataset.conteggi[c.dataIndex])})` } } },
+    },
+  });
+}
+
+function topAteco() {
+  const anni = D.meta.anni, col = coloriAnni(), ult = anni[anni.length - 1];
+  const map = agg("base", ["anno", "ateco"]);
+  const tutti = D.diz.ateco.map((v, i) => i);
+  const top = tutti.sort((x, y) => get(map, ult, y).n - get(map, ult, x).n).slice(0, 10).filter(i => get(map, ult, i).n > 0);
+  legenda("leg-ateco", anni.map(a => [a, col[a]]));
+  const corta = s => s.length > 42 ? s.slice(0, 40) + "…" : s;
+  disegna("c-ateco", {
+    type: "bar",
+    data: {
+      labels: top.map(i => corta(D.diz.ateco[i])),
+      datasets: anni.map(a => ({ label: String(a), backgroundColor: col[a], borderRadius: 3, barPercentage: .9, categoryPercentage: .8,
+        data: top.map(i => get(map, a, i).n) })),
+    },
+    options: {
+      indexAxis: "y", responsive: true, maintainAspectRatio: false,
+      scales: { x: { ticks: { callback: v => fmtK(v) } }, y: { grid: { display: false }, ticks: { font: { size: 11 } } } },
+      plugins: { tooltip: { callbacks: { title: c => D.diz.ateco[top[c[0].dataIndex]], label: c => ` ${c.dataset.label}: ${fmt.format(c.raw)}` } } },
+    },
+  });
+}
+
+function gestGenere() {
+  const map = agg("base", ["anno", "gest", "genere"]);
+  const generi = D.diz.genere.filter(g => g !== "Non determinato");
+  smallMultiples("gest-genere", "gg", a => {
+    const gest = D.diz.gest.map((g, i) => [g, i]).filter(([, i]) => generi.some(g => get(map, a, i, D.diz.genere.indexOf(g)).n));
+    const tot = gest.reduce((s, [, i]) => s + generi.reduce((t, g) => t + get(map, a, i, D.diz.genere.indexOf(g)).n, 0), 0);
+    document.getElementById(`gg-h-${a}`).textContent = `${TERR[terr]} ${a}`;
+    const tg = generi.map(g => [g, gest.reduce((s, [, i]) => s + get(map, a, i, D.diz.genere.indexOf(g)).n, 0)]);
+    document.getElementById(`gg-s-${a}`).innerHTML = tg.map(([g, n]) => `${g} <b class="num">${fmt.format(n)}</b>`).join(" · ");
+    legenda(`gg-l-${a}`, generi.map(g => [g, coloreGenere(g)]));
+    disegna(`gg-${a}`, {
+      type: "bar",
+      data: {
+        labels: gest.map(([g]) => g),
+        datasets: generi.slice().reverse().map(g => ({
+          label: g, backgroundColor: coloreGenere(g), borderColor: css("--panel"), borderWidth: { top: 2 }, borderSkipped: false,
+          data: gest.map(([, i]) => get(map, a, i, D.diz.genere.indexOf(g)).n),
+        })),
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        scales: { x: { stacked: true, grid: { display: false }, ticks: { font: { size: 11 } } }, y: { stacked: true, ticks: { callback: v => fmtK(v) } } },
+        plugins: {
+          tooltip: { callbacks: { label: c => ` ${c.dataset.label}: ${fmt.format(c.raw)}` } },
+          etichette: { on: true, inside: true, format: v => fmt.format(v) },
+        },
+      },
+      plugins: [etichette],
+    });
+  });
+}
+
+function linee(id, legId, cubo, dim, etichette, filtroIdx) {
+  const anni = D.meta.anni, col = coloriAnni();
+  const map = agg(cubo, ["anno", dim]);
+  legenda(legId, anni.map(a => [a, col[a]]));
+  disegna(id, {
+    type: "line",
+    data: {
+      labels: etichette,
+      datasets: anni.map(a => ({
+        label: String(a), borderColor: col[a], backgroundColor: col[a], borderWidth: 2, pointRadius: 3, pointHoverRadius: 5, tension: .25,
+        data: etichette.map((_, i) => filtroIdx && !filtroIdx(a, i) ? null : get(map, a, i).n),
+      })),
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false, interaction: { mode: "index", intersect: false }, spanGaps: false,
+      scales: { x: { grid: { display: false } }, y: { beginAtZero: true, ticks: { callback: v => fmtK(v) } } },
+      plugins: { tooltip: { callbacks: { label: c => ` ${c.dataset.label}: ${c.raw == null ? "–" : fmt.format(c.raw)}` } } },
+    },
+  });
+}
+
+function esito() {
+  const sec = document.getElementById("sec-esito");
+  sec.hidden = pagina !== "semestrale" || !D.diz.esito;
+  if (sec.hidden) return;
+  const anni = D.meta.anni.slice().reverse(), map = agg("base", ["anno", "esito"]), tot = agg("base", ["anno"]);
+  const pal = [css("--s-aqua"), css("--s-yellow"), css("--s-violet"), css("--s-orange")];
+  const ord = D.diz.esito.map((e, i) => [e, i]).sort((x, y) => (y[0] === "Positivo") - (x[0] === "Positivo"));
+  legenda("leg-esito", ord.map(([e], k) => [e, pal[k % pal.length]]));
+  disegna("c-esito", {
+    type: "bar",
+    data: {
+      labels: anni.map(String),
+      datasets: ord.map(([e, i], k) => ({
+        label: e, backgroundColor: pal[k % pal.length], borderColor: css("--panel"), borderWidth: { right: 2 }, borderSkipped: false,
+        data: anni.map(a => get(tot, a).n ? get(map, a, i).n / get(tot, a).n : 0),
+        conteggi: anni.map(a => get(map, a, i).n),
+      })),
+    },
+    options: {
+      indexAxis: "y", responsive: true, maintainAspectRatio: false,
+      scales: { x: { stacked: true, max: 1, ticks: { callback: v => pct(v, 0) }, grid: { display: false } }, y: { stacked: true, grid: { display: false } } },
+      plugins: {
+        tooltip: { callbacks: { label: c => ` ${c.dataset.label}: ${pct(c.raw)} (${fmt.format(c.dataset.conteggi[c.dataIndex])})` } },
+        etichette: { on: true, inside: true, format: v => pct(v) },
+      },
+    },
+    plugins: [etichette],
+  });
+}
+
+function periodo() {
+  const m = D.meta.mesi_ultimo_anno;
+  return m >= 12 ? "anno intero" : m === 1 ? "gennaio" : `gennaio – ${MESI_LUNGHI[m - 1]}`;
+}
+
+/* ---------- ciclo principale ---------- */
+// Un solo ricalcolo per fotogramma anche con clic rapidi; ogni sezione isolata dalle altre.
+let inAttesa = false;
+function aggiorna() {
+  if (inAttesa) return;
+  inAttesa = true;
+  requestAnimationFrame(() => { inAttesa = false; aggiornaOra(); });
+}
+function sezione(nome, fn) {
+  try { fn(); }
+  catch (e) { console.error(nome, e); mostraErrore(`${nome}: ${e && e.message ? e.message : e}`); }
+}
+function mostraErrore(msg) {
+  const box = document.getElementById("errori");
+  box.hidden = false;
+  if (!box.textContent.includes(msg)) box.textContent += (box.textContent ? "\n" : "") + msg;
+}
+window.addEventListener("error", e => mostraErrore(e.message || String(e)));
+window.addEventListener("unhandledrejection", e => mostraErrore(String(e.reason)));
+function aggiornaOra() {
+  const t0 = performance.now();
+  document.querySelectorAll("#terr-seg button").forEach((b, i) => b.setAttribute("aria-pressed", i === terr));
+  sezione("Filtri", statoFiltri);
+  sezione("Confronto territori", quadroConfronto);
+  sezione("Totali", kpi);
+  sezione("Età per genere", etaGenere);
+  sezione("Distribuzione età", distribEta);
+  sezione("Top Ateco", topAteco);
+  sezione("Gestione tariffaria", gestGenere);
+  sezione("Giorno della settimana", () => linee("c-giorno", "leg-giorno", "giorno", "giorno", D.diz.giorno));
+  const ult = D.meta.anni[D.meta.anni.length - 1], M = D.meta.mesi_ultimo_anno;
+  sezione("Andamento mensile", () => linee("c-mese", "leg-mese", "mese", "mese", D.diz.mese, (a, i) => !(a === ult && i >= M)));
+  sezione("Esito", esito);
+  console.info(`Portale aggiornato in ${Math.round(performance.now() - t0)} ms`);
+}
+
+async function apri(nome) {
+  pagina = nome;
+  document.querySelectorAll(".tabs a").forEach(a => a.setAttribute("aria-current", a.id === "tab-" + nome ? "page" : "false"));
+  try { D = await carica(nome); }
+  catch (e) {
+    document.getElementById("page-desc").textContent = e.message + ". Genera i dati con scarica_inail.py e mettili nella cartella data/ accanto a questa pagina.";
+    return;
+  }
+  for (const k in sel) sel[k].clear();
+  if (tipo === "MA" && !haAccertati()) tipo = "MD";
+  const P = PAGINE[nome];
+  document.getElementById("page-title").textContent = P.titolo;
+  document.getElementById("page-desc").textContent = P.desc;
+  document.getElementById("demo").hidden = !D.meta.demo;
+  const m = D.meta;
+  document.getElementById("meta").innerHTML =
+    `Anni <b>${m.anni.join(" · ")}</b>${nome === "mensile" ? ` · periodo <b>${periodo()}</b>` : ""}<br>Rilevazione INAIL al <b>${m.rilevazione ?? "–"}</b>` +
+    (m.chiamate_fallite && m.chiamate_fallite.length ? `<br><span class="delta up" title="${m.chiamate_fallite.join('\n')}">Dati incompleti: ${m.chiamate_fallite.length} ${m.chiamate_fallite[0].startsWith("File") ? "regioni mancanti" : "chiamate API non riuscite"}</span>` : "");
+  document.getElementById("mese-title").textContent = nome === "mensile" ? "Andamento mensile" : "Andamento per mese";
+  document.getElementById("mese-sub").textContent = nome === "mensile"
+    ? `Per mese di accadimento. L'anno precedente è mostrato intero, i totali sopra si fermano a ${MESI_LUNGHI[m.mesi_ultimo_anno - 1]}.`
+    : "Per mese di accadimento";
+  document.getElementById("foot-gen").textContent = `Dati elaborati il ${m.generato}`;
+  costruisciFiltri();
+  aggiorna();
+}
+
+function daHash() { return location.hash === "#mensile" ? "mensile" : "semestrale"; }
+window.addEventListener("hashchange", () => apri(daHash()));
+document.addEventListener("click", e => { const d = document.getElementById("ateco-dd"); if (d && d.open && !d.contains(e.target)) d.open = false; });
+
+// ridisegna i grafici quando cambia il tema
+const ridisegna = () => { if (D) { chartBase(); aggiorna(); } };
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", ridisegna);
+new MutationObserver(ridisegna).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+
+// i filtri restano attaccati sotto la barra in alto
+const barra = document.querySelector(".top");
+const misuraBarra = () => document.documentElement.style.setProperty("--top-h", barra.getBoundingClientRect().height + "px");
+new ResizeObserver(misuraBarra).observe(barra); misuraBarra();
+document.getElementById("espandi").onclick = () => impostaRidotti(false);
+document.getElementById("azzera-c").onclick = () => { for (const k in sel) sel[k].clear(); tipo = "C"; costruisciFiltri(); aggiorna(); };
+{
+  const sticky = document.getElementById("filtri-sticky"), sentinella = document.createElement("div");
+  sentinella.style.height = "1px"; sticky.before(sentinella);
+  new IntersectionObserver(([e]) => sticky.classList.toggle("staccato", !e.isIntersecting),
+    { rootMargin: `-${parseInt(getComputedStyle(document.documentElement).getPropertyValue("--top-h")) || 60}px 0px 0px 0px` }).observe(sentinella);
+}
+chartBase();
+costruisciTerritori();
+apri(daHash());
+try { if (localStorage.getItem("filtri-ridotti") === "1") impostaRidotti(true); } catch (e) {}
+})();
+</script>
+
+</body>
+</html>
