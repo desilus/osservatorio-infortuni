@@ -1,2 +1,5 @@
 pipeline/cache/
 __pycache__/
+.venv/
+csv_inail/
+ora_brescia/

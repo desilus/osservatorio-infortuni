@@ -517,6 +517,155 @@ def esporta(df: pd.DataFrame, dataset: str, anni: list[int], falliti: list[str])
 
 
 # --------------------------------------------------------------------------
+# Ora e giorno dell'infortunio (Excel esportati dalla banca dati statistica INAIL)
+# --------------------------------------------------------------------------
+ORA_GIORNI = ["Lunedì", "Martedì", "Mercoledì", "Giovedì", "Venerdì", "Sabato", "Domenica"]
+ORA_FASCE = [f"{h:02d}–{h + 1:02d}" for h in range(24)] + ["Non determinata"]
+ORA_NAZ = {"ITA": NAZ_LABEL["ITA"], "UE": NAZ_LABEL["UE"], "EUE": NAZ_LABEL["EUE"]}
+ORA_MOD = {"OL": MODALITA["N"], "IT": MODALITA["S"]}
+
+
+def leggi_excel(f: Path) -> pd.DataFrame:
+    try:
+        return pd.read_excel(f, engine="calamine")      # molto più veloce, se installato
+    except Exception:  # noqa: BLE001
+        return pd.read_excel(f)                         # openpyxl
+
+
+def ora_giorno(cartella: Path) -> Path:
+    """Legge tutti gli .xlsx della cartella (nomi indifferenti), tiene solo le righe con casi,
+    somma e scrive portale/data/orari.json."""
+    files = sorted(p for p in Path(cartella).iterdir() if p.suffix.lower() in (".xlsx", ".xls")
+                   and not p.name.startswith("~$"))
+    if not files:
+        raise SystemExit(f"Nessun file Excel in {cartella}")
+    print(f"[orari] {len(files)} file Excel in {cartella}")
+    parti, viste, doppioni, firme = [], {}, [], {}
+    for k, f in enumerate(files, 1):
+        df = leggi_excel(f)
+        df.columns = [str(c).strip() for c in df.columns]
+        valore = "Giorno settimanale" if "Giorno settimanale" in df.columns else None
+        if valore is None:
+            num = [c for c in df.columns if c != "anno" and pd.api.types.is_numeric_dtype(df[c])]
+            if not num:
+                print(f"  ! {f.name}: colonna dei conteggi non trovata, file ignorato", file=sys.stderr)
+                continue
+            valore = num[0]
+        chiave_file = tuple(str(df[c].iloc[0]).strip().upper() for c in ("anno", "genere", "modalita", "tipo", "nazionalita"))
+        if chiave_file in viste:
+            doppioni.append(f"{f.name} (uguale a {viste[chiave_file]})")
+            continue
+        # le colonne di etichetta devono essere costanti in tutto il file
+        for c in ("anno", "genere", "modalita", "tipo", "nazionalita"):
+            vals = df[c].dropna().astype(str).str.strip().str.upper().unique()
+            if len(vals) > 1:
+                print(f"  ! {f.name}: la colonna '{c}' ha più valori ({', '.join(vals[:4])}): controlla il file",
+                      file=sys.stderr)
+        viste[chiave_file] = f.name
+        df = df[pd.to_numeric(df[valore], errors="coerce").fillna(0) > 0].copy()
+        df["n"] = pd.to_numeric(df[valore]).astype(int)
+        parti.append(df)
+        firme[chiave_file] = (int(df["n"].sum()),
+                              hash(tuple(sorted(zip(df["Giorno"], df["Ora Solare"], df["Att. economica (Ateco)"],
+                                                    df["Gestione Tariffaria"], df["n"])))))
+        print(f"  {k}/{len(files)}  {'-'.join(chiave_file):<22} {int(df['n'].sum()):>6} casi  ({f.name})")
+    if doppioni:
+        print("  ! file con la stessa combinazione, ignorati: " + "; ".join(doppioni), file=sys.stderr)
+
+    # --- controlli di coerenza tra file -----------------------------------------------
+    problemi = []
+    # 1) due file con etichette diverse ma contenuto identico (es. un file C salvato come M)
+    per_firma = {}
+    for chiave, (tot, firma) in firme.items():
+        if tot > 0:
+            per_firma.setdefault(firma, []).append(chiave)
+    for chiavi in per_firma.values():
+        if len(chiavi) > 1:
+            problemi.append("contenuto IDENTICO in file con etichette diverse: " +
+                            " | ".join(f"{'-'.join(c)} ({viste[c]})" for c in chiavi))
+    # 2) i mortali (M) devono essere pochi e mai più del complesso (C) della stessa combinazione
+    for chiave, (tot_m, _) in firme.items():
+        anno, gen, mod, tipo_f, naz = chiave
+        if tipo_f != "M" or tot_m == 0:
+            continue
+        c = firme.get((anno, gen, mod, "C", naz))
+        if c and tot_m > c[0]:
+            problemi.append(f"{'-'.join(chiave)} ha {tot_m} mortali ma il file C corrispondente ne ha solo {c[0]} "
+                            f"({viste[chiave]})")
+        elif c and tot_m > max(10, 0.05 * c[0]):
+            problemi.append(f"{'-'.join(chiave)}: {tot_m} mortali su {c[0]} casi in complesso, troppi: "
+                            f"probabilmente è un file C con l'etichetta M ({viste[chiave]})")
+    if problemi:
+        print("\n  ! CONTROLLI SUI FILE – da verificare prima di usare i dati:", file=sys.stderr)
+        for p_ in problemi:
+            print("    - " + p_, file=sys.stderr)
+    # riepilogo dei mortali per file, per controllarli a colpo d'occhio
+    mort = sorted(((c, t) for c, (t, _) in firme.items() if c[3] == "M" and t > 0), key=lambda x: (x[0][0], -x[1]))
+    if mort:
+        print("\n  mortali per file (solo file con almeno un caso):")
+        for c, t in mort:
+            print(f"    {'-'.join(c):<22} {t:>4}   {viste[c]}")
+    df = pd.concat(parti, ignore_index=True)
+
+    # decodifica nelle stesse etichette del resto del portale
+    df["anno"] = df["anno"].astype(int)
+    df["genere"] = df["genere"].str.strip().str.upper().map(GENERE).fillna("Non determinato")
+    df["modalita"] = df["modalita"].str.strip().str.upper().map(ORA_MOD).fillna("Non determinata")
+    df["naz"] = df["nazionalita"].str.strip().str.upper().map(ORA_NAZ).fillna(NAZ_LABEL["ND"])
+    df["gest"] = df["Gestione Tariffaria"].str.strip().replace({"Altre Attività": "Altre attività"})
+    df["ateco"] = df["Att. economica (Ateco)"].str.strip()
+    df["giorno"] = df["Giorno"].str.extract(r"^(\d)").astype(int)[0] - 1
+    ora = df["Ora Solare"].str.extract(r"^(\d{2})h")[0]
+    df["ora"] = pd.to_numeric(ora, errors="coerce").fillna(24).astype(int)
+    tipo = df["tipo"].str.strip().str.upper()
+
+    # I file vengono da "Infortuni > Definiti > Caratteristiche infortunio (Accertati positivi)":
+    # tipo C = infortuni accertati positivi, tipo M = mortali accertati. Diventano due misure.
+    dims = ["anno", "genere", "modalita", "naz", "gest", "ateco", "giorno", "ora"]
+    c = df[tipo == "C"].groupby(dims)["n"].sum().rename("n")
+    m = df[tipo == "M"].groupby(dims)["n"].sum().rename("ma")
+    g = pd.concat([c, m], axis=1).fillna(0).astype(int).reset_index()
+    g = g[(g["n"] > 0) | (g["ma"] > 0)]
+
+    diz = {
+        "genere": ordina(g["genere"], ["Maschi", "Femmine"]),
+        "modalita": ordina(g["modalita"], list(MODALITA.values())),
+        "naz": ordina(g["naz"], [NAZ_LABEL[k] for k in NAZ]),
+        "gest": ordina(g["gest"], ["Industria", "Artigianato", "Terziario", "Altre attività", "Non determinata"]),
+        "ateco": ordina(g["ateco"]),
+        "giorno": ORA_GIORNI, "ora": ORA_FASCE,
+    }
+    col = {}
+    for d in dims:
+        col[d] = (g[d].map({v: i for i, v in enumerate(diz[d])}) if d in diz and d not in ("giorno", "ora")
+                  else g[d]).astype(int).tolist()
+    col["n"], col["ma"] = g["n"].tolist(), g["ma"].tolist()
+    col["gi"] = [0] * len(g)
+
+    print("\n[orari] totali per anno (Brescia, Industria e servizi, accertati positivi) – confrontali con il portale:")
+    for a in sorted(g["anno"].unique()):
+        tc = int(g.loc[g["anno"] == a, "n"].sum()); tm = int(g.loc[g["anno"] == a, "ma"].sum())
+        nfile = sum(1 for k in viste if k[0] == str(a))
+        print(f"  {a}: accertati positivi {tc:>6}   mortali accertati {tm:>3}   ({nfile} file su 24 attesi)")
+        if nfile < 24:
+            print(f"    ! per il {a} mancano {24 - nfile} combinazioni: i totali saranno incompleti", file=sys.stderr)
+
+    out = {
+        "meta": {"dataset": "orari", "anni": sorted(int(a) for a in g["anno"].unique()),
+                 "generato": dt.datetime.now().strftime("%d/%m/%Y %H:%M"),
+                 "fonte": "Banca dati statistica INAIL – Infortuni definiti, Industria e servizi, accertati positivi: ora solare e giorno",
+                 "file": len(viste), "rilevazione": None, "mesi_ultimo_anno": 12, "chiamate_fallite": [], "demo": False},
+        "diz": diz,
+        "cubi": {"base": {"dims": dims, "righe": len(g), "col": col}},
+    }
+    OUT.mkdir(parents=True, exist_ok=True)
+    f = OUT / "orari.json"
+    f.write_text(json.dumps(out, ensure_ascii=True, separators=(",", ":")), encoding="utf-8")
+    print(f"[orari] scritto {f}  ({f.stat().st_size / 1e6:.1f} MB, {len(g)} righe)")
+    return f
+
+
+# --------------------------------------------------------------------------
 def main():
     oggi = dt.date.today()
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -529,7 +678,13 @@ def main():
     p.add_argument("--paralleli", type=int, default=4, help="chiamate contemporanee (default 4)")
     p.add_argument("--da-csv", metavar="CARTELLA", type=Path,
                    help="non usare l'API: leggi i CSV/ZIP già scaricati dal portale INAIL in questa cartella")
+    p.add_argument("--ora-giorno", metavar="CARTELLA", type=Path,
+                   help="elabora solo gli Excel ora/giorno di Brescia (banca dati statistica) in questa cartella")
     a = p.parse_args()
+
+    if a.ora_giorno:
+        ora_giorno(a.ora_giorno)
+        return
 
     tip = carica_tipologiche()
 

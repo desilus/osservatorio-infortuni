@@ -159,6 +159,15 @@ table.cmp { width: 100%; border-collapse: collapse; font-variant-numeric: tabula
 .legend { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12px; color: var(--ink-2); margin-bottom: 6px; }
 .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; }
 .note { font-size: 12px; color: var(--ink-3); margin-top: 8px; }
+body[data-pagina="orari"] .solo-od, body:not([data-pagina="orari"]) .solo-orari, body[data-pagina="orari"] .terr { display: none !important; }
+.hm-testa { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+table.hm { border-collapse: separate; border-spacing: 2px; width: 100%; min-width: 820px; font-variant-numeric: tabular-nums; }
+.hm th { font: 600 11px/1.2 var(--f-body); color: var(--ink-3); padding: 4px 1px; text-align: center; }
+.hm th.g { text-align: left; padding-right: 10px; white-space: nowrap; color: var(--ink-2); font-size: 12px; }
+.hm td { height: 32px; text-align: center; font-size: 11px; border-radius: 3px; color: var(--ink-2); cursor: default; }
+.hm td.chiaro { color: #fff; font-weight: 600; }
+.hm td.tot { background: none; color: var(--ink-3); font-weight: 600; padding-left: 6px; }
+.hm tr.tot td { background: none; color: var(--ink-3); font-weight: 600; height: 24px; }
 .empty { padding: 40px 10px; text-align: center; color: var(--ink-3); }
 .errori { margin: 12px 0 0; padding: 10px 14px; border: 1px solid var(--up); border-radius: 8px; color: var(--up); background: var(--panel); white-space: pre-wrap; font: 12.5px/1.4 ui-monospace, Consolas, monospace; }
 .foot { margin-top: 28px; font-size: 12px; color: var(--ink-3); border-top: 1px solid var(--line); padding-top: 12px; display: flex; flex-wrap: wrap; gap: 6px 20px; justify-content: space-between; }
@@ -172,6 +181,7 @@ table.cmp { width: 100%; border-collapse: collapse; font-variant-numeric: tabula
     <nav class="tabs" aria-label="Dataset">
       <a href="#semestrale" id="tab-semestrale">Semestrale · denunce ed esiti</a>
       <a href="#mensile" id="tab-mensile">Mensile · denunce</a>
+      <a href="#orari" id="tab-orari">Orari · Brescia</a>
     </nav>
     <div class="terr">
       <span class="seg-label">Territorio</span>
@@ -201,7 +211,7 @@ table.cmp { width: 100%; border-collapse: collapse; font-variant-numeric: tabula
   </div>
   <pre class="errori" id="errori" hidden></pre>
 
-  <section>
+  <section class="solo-od">
     <div class="sec-h"><h2>Confronto tra territori</h2><p>Stessi filtri per tutti e quattro · clicca una riga per cambiare territorio</p></div>
     <div class="panel tscroll"><table class="cmp" id="cmp"></table></div>
   </section>
@@ -211,12 +221,12 @@ table.cmp { width: 100%; border-collapse: collapse; font-variant-numeric: tabula
     <div class="kpis" id="kpis"></div>
   </section>
 
-  <section>
+  <section class="solo-od">
     <div class="sec-h"><h2>Classe d'età per genere</h2><p>Quota di femmine e maschi in ogni classe d'età</p></div>
     <div class="grid3" id="eta-genere"></div>
   </section>
 
-  <section class="grid2">
+  <section class="grid2 solo-od">
     <div class="panel">
       <h3>Distribuzione per classe d'età</h3>
       <p class="sub">Quota sul totale dell'anno</p>
@@ -231,12 +241,44 @@ table.cmp { width: 100%; border-collapse: collapse; font-variant-numeric: tabula
     </div>
   </section>
 
+  <section class="solo-orari">
+    <div class="panel">
+      <h3>Fascia oraria</h3>
+      <p class="sub" id="ora-sub">Ora solare di accadimento</p>
+      <div class="legend" id="leg-ora"></div>
+      <div class="chart" style="height:320px"><canvas id="c-ora"></canvas></div>
+    </div>
+  </section>
+
+  <section class="solo-orari">
+    <div class="sec-h"><h2>Giorno e ora</h2><p>Più scuro = più infortuni · passa sopra una cella per il dettaglio</p></div>
+    <div class="panel">
+      <div class="hm-testa"><span class="seg-label">Anno</span><div class="seg" id="hm-anni" role="group" aria-label="Anno della mappa"></div></div>
+      <div class="tscroll"><table class="hm" id="hm"></table></div>
+    </div>
+  </section>
+
+  <section class="grid2 solo-orari">
+    <div class="panel">
+      <h3>Giorno della settimana</h3>
+      <p class="sub">Casi per giorno, per anno</p>
+      <div class="legend" id="leg-giorno-o"></div>
+      <div class="chart" style="height:300px"><canvas id="c-giorno-o"></canvas></div>
+    </div>
+    <div class="panel">
+      <h3>Top 10 attività economiche (Ateco)</h3>
+      <p class="sub">Ordinate sull'anno più recente</p>
+      <div class="legend" id="leg-ateco-o"></div>
+      <div class="chart" style="height:300px"><canvas id="c-ateco-o"></canvas></div>
+    </div>
+  </section>
+
   <section>
     <div class="sec-h"><h2>Genere e gestione tariffaria</h2><p>Il dataset INAIL non contiene la dimensione aziendale: qui la gestione tariffaria per genere</p></div>
     <div class="grid3" id="gest-genere"></div>
   </section>
 
-  <section class="grid2">
+  <section class="grid2 solo-od">
     <div class="panel">
       <h3>Giorno della settimana</h3>
       <p class="sub">Ricavato dalla data di accadimento. L'ora non è presente nel dataset.</p>
@@ -251,7 +293,7 @@ table.cmp { width: 100%; border-collapse: collapse; font-variant-numeric: tabula
     </div>
   </section>
 
-  <section id="sec-esito" hidden>
+  <section id="sec-esito" class="solo-od" hidden>
     <div class="panel">
       <h3>Esito della definizione amministrativa</h3>
       <p class="sub">Quota di casi per esito, per anno. Utile per leggere i totali: non tutte le denunce diventano infortuni riconosciuti.</p>
@@ -261,7 +303,7 @@ table.cmp { width: 100%; border-collapse: collapse; font-variant-numeric: tabula
   </section>
 
   <footer class="foot">
-    <span>Fonte: <a href="https://dati.inail.it/portale/it/dataset/open-api.html" target="_blank" rel="noopener">INAIL Open Data – Open API</a> · Licenza IODL 2.0</span>
+    <span id="foot-fonte">Fonte: <a href="https://dati.inail.it/portale/it/dataset/open-api.html" target="_blank" rel="noopener">INAIL Open Data – Open API</a> · Licenza IODL 2.0</span>
     <span id="foot-gen"></span>
   </footer>
 </main>
@@ -279,7 +321,12 @@ const FILTRI = [
   { dim: "gest",     label: "Gestione tariffaria" },
   { dim: "esito",    label: "Esito definizione", only: "semestrale" },
 ];
+const nomeTerr = () => pagina === "orari" ? "Brescia" : TERR[terr];
 const PAGINE = {
+  orari: {
+    titolo: "Ora e giorno degli infortuni · Brescia",
+    desc: "Banca dati statistica INAIL, infortuni definiti, gestione Industria e servizi: solo i casi accertati positivi (riconosciuti da INAIL), per ora solare e giorno della settimana, provincia di Brescia. Non sono le denunce: per confrontarli con la pagina Semestrale usa Esito = Positivo e Gestione = Industria e servizi.",
+  },
   semestrale: {
     titolo: "Denunce ed esiti · ultimo triennio",
     desc: "Dataset semestrale: tutte le denunce di infortunio accadute negli anni completi, ciascuna con l'esito della definizione amministrativa. Senza filtro Esito si vedono le denunce; con Positivo gli infortuni riconosciuti.",
@@ -299,6 +346,7 @@ const cache = {};
 let D = null, pagina = "semestrale", terr = 2;      // Brescia di default
 let tipo = "C";                                   // C = in complesso, MD = mortali denunciati, MA = mortali accertati
 const haAccertati = () => !!(D && D.cubi.base.col.ma);
+const haDenunciati = () => !!(D && (D.cubi.base.col.md || D.cubi.base.col.m));
 const sel = {};                                   // dim -> Set di indici selezionati (vuoto = tutti)
 const charts = {};
 
@@ -330,8 +378,8 @@ function agg(nomeCubo, gruppo, { tuttiTerr = false } = {}) {
   const c = D.cubi[nomeCubo], col = c.col, N = col.n.length;
   const mas = filtroMaschere(c, tuttiTerr), nm = mas.length;
   const gcols = gruppo.map(g => col[g]), ng = gcols.length;
-  const md = col.md || col.m, ma = col.ma || null;
-  const vn = tipo === "MD" ? md : tipo === "MA" && ma ? ma : col.n, vg = col.gi;
+  const md = col.md || col.m || null, ma = col.ma || null;
+  const vn = tipo === "MD" && md ? md : tipo === "MA" && ma ? ma : col.n, vg = col.gi;
   const out = new Map();
   outer: for (let i = 0; i < N; i++) {
     for (let k = 0; k < nm; k++) if (!mas[k][1][mas[k][0][i]]) continue outer;
@@ -339,7 +387,7 @@ function agg(nomeCubo, gruppo, { tuttiTerr = false } = {}) {
     for (let g = 0; g < ng; g++) key = key * B + gcols[g][i];
     let o = out.get(key);
     if (!o) { o = { n: 0, md: 0, ma: 0, gi: 0 }; out.set(key, o); }
-    o.n += vn[i]; o.md += md[i]; if (ma) o.ma += ma[i]; o.gi += vg[i];
+    o.n += vn[i]; if (md) o.md += md[i]; if (ma) o.ma += ma[i]; o.gi += vg[i];
   }
   return out;
 }
@@ -422,7 +470,7 @@ function costruisciTerritori() {
 function costruisciFiltri() {
   const box = document.getElementById("filters");
   let h = `<div class="fgroup"><span class="seg-label">Tipologia</span><div class="chips">` +
-    [["C", "C – In complesso"], ["MD", "M – Mortali denunciati"], ...(haAccertati() ? [["MA", "M – Mortali accertati"]] : [])].map(([k, t]) =>
+    [["C", pagina === "orari" ? "C – Accertati positivi" : "C – In complesso"], ...(haDenunciati() ? [["MD", "M – Mortali denunciati"]] : []), ...(haAccertati() ? [["MA", "M – Mortali accertati"]] : [])].map(([k, t]) =>
       `<button type="button" class="chip tipo" id="tipo-${k}" data-k="${k}" aria-pressed="${tipo === k}">${t}</button>`).join("") +
     `</div></div>`;
   for (const f of FILTRI) {
@@ -529,13 +577,14 @@ function statoFiltri() {
   // riepilogo per la barra ridotta
   const parti = [];
   if (tipo !== "C") parti.push(`<b>${tipo === "MD" ? "Mortali denunciati" : "Mortali accertati"}</b>`);
+  else if (pagina === "orari") parti.push(`<b>Accertati positivi</b>`);
   for (const f of FILTRI) {
     const sf = sel[f.dim];
     if (!sf || !sf.size || !D.diz[f.dim]) continue;
     parti.push(`${f.label}: <b>${[...sf].map(i => f.short ? f.short(D.diz[f.dim][i]) : D.diz[f.dim][i]).join(", ")}</b>`);
   }
   if (s.size) parti.push(`Ateco: <b>${s.size === 1 ? D.diz.ateco[[...s][0]].slice(0, 40) : s.size + " selezionate"}</b>`);
-  document.getElementById("riepilogo").innerHTML = `<b>${TERR[terr]}</b> · ` + (parti.length ? parti.join(" · ") : "nessun filtro attivo");
+  document.getElementById("riepilogo").innerHTML = `<b>${nomeTerr()}</b> · ` + (parti.length ? parti.join(" · ") : "nessun filtro attivo");
   document.getElementById("azzera-c").disabled = n === 0;
 }
 function impostaRidotti(ridotti) {
@@ -598,16 +647,16 @@ function deltaHtml(v) {
 function kpi() {
   const anni = D.meta.anni, col = coloriAnni();
   const tot = agg("base", ["anno"]);
-  const cosa = tipo === "MD" ? "Mortali denunciati" : tipo === "MA" ? "Mortali accertati" : "Totale eventi";
-  document.getElementById("kpi-title").textContent = `${cosa} · ${TERR[terr]}`;
-  document.getElementById("kpi-sub").textContent = pagina === "mensile" ? `Periodo ${periodo()}` : "Anno di accadimento";
+  const cosa = tipo === "MD" ? "Mortali denunciati" : tipo === "MA" ? "Mortali accertati" : pagina === "orari" ? "Infortuni accertati" : "Totale eventi";
+  document.getElementById("kpi-title").textContent = `${cosa} · ${nomeTerr()}`;
+  document.getElementById("kpi-sub").textContent = pagina === "mensile" ? `Periodo ${periodo()}` : pagina === "orari" ? "Industria e servizi · casi definiti positivi · anno di accadimento" : "Anno di accadimento";
   document.getElementById("kpis").innerHTML = anni.slice().reverse().map((a, idx, arr) => {
     const n = get(tot, a).n, p = arr[idx + 1] != null ? get(tot, arr[idx + 1]).n : 0;
     const r = get(tot, a);
     return `<div class="kpi"><div class="lab"><i style="background:${col[a]}"></i>${cosa} ${a}</div>
       <div class="val">${fmtK(n)}</div>
       <div class="d">${p ? `${deltaHtml(n / p - 1)} sull'anno prima` : "&nbsp;"}</div>
-      <div class="d">${tipo !== "C" ? (tipo === "MA" ? "esito mortale riconosciuto da INAIL" : "denunce con data di morte") : `${fmt.format(r.md)} mortali denunciati${haAccertati() ? `, ${fmt.format(r.ma)} accertati` : ""}`}</div></div>`;
+      <div class="d">${tipo !== "C" ? (tipo === "MA" ? "esito mortale riconosciuto da INAIL" : "denunce con data di morte") : [haDenunciati() ? `${fmt.format(r.md)} mortali denunciati` : "", haAccertati() ? `${fmt.format(r.ma)} mortali accertati` : ""].filter(Boolean).join(", ")}</div></div>`;
   }).join("");
 }
 
@@ -685,14 +734,14 @@ function distribEta() {
   });
 }
 
-function topAteco() {
+function topAteco(idCanvas = "c-ateco", idLeg = "leg-ateco") {
   const anni = D.meta.anni, col = coloriAnni(), ult = anni[anni.length - 1];
   const map = agg("base", ["anno", "ateco"]);
   const tutti = D.diz.ateco.map((v, i) => i);
   const top = tutti.sort((x, y) => get(map, ult, y).n - get(map, ult, x).n).slice(0, 10).filter(i => get(map, ult, i).n > 0);
-  legenda("leg-ateco", anni.map(a => [a, col[a]]));
+  legenda(idLeg, anni.map(a => [a, col[a]]));
   const corta = s => s.length > 42 ? s.slice(0, 40) + "…" : s;
-  disegna("c-ateco", {
+  disegna(idCanvas, {
     type: "bar",
     data: {
       labels: top.map(i => corta(D.diz.ateco[i])),
@@ -713,7 +762,7 @@ function gestGenere() {
   smallMultiples("gest-genere", "gg", a => {
     const gest = D.diz.gest.map((g, i) => [g, i]).filter(([, i]) => generi.some(g => get(map, a, i, D.diz.genere.indexOf(g)).n));
     const tot = gest.reduce((s, [, i]) => s + generi.reduce((t, g) => t + get(map, a, i, D.diz.genere.indexOf(g)).n, 0), 0);
-    document.getElementById(`gg-h-${a}`).textContent = `${TERR[terr]} ${a}`;
+    document.getElementById(`gg-h-${a}`).textContent = `${nomeTerr()} ${a}`;
     const tg = generi.map(g => [g, gest.reduce((s, [, i]) => s + get(map, a, i, D.diz.genere.indexOf(g)).n, 0)]);
     document.getElementById(`gg-s-${a}`).innerHTML = tg.map(([g, n]) => `${g} <b class="num">${fmt.format(n)}</b>`).join(" · ");
     legenda(`gg-l-${a}`, generi.map(g => [g, coloreGenere(g)]));
@@ -790,6 +839,39 @@ function esito() {
   });
 }
 
+/* ---------- pagina Orari ---------- */
+let annoHM = null;
+function fasceOrarie() {
+  const nd = agg("base", ["anno", "ora"]), ult = D.meta.anni[D.meta.anni.length - 1];
+  const casiND = get(nd, ult, 24).n;
+  document.getElementById("ora-sub").textContent = `Ora solare di accadimento, per anno. ${casiND ? `Nel ${ult} ${fmt.format(casiND)} casi hanno l'ora non determinata e non compaiono nel grafico.` : ""}`;
+  linee("c-ora", "leg-ora", "base", "ora", D.diz.ora.slice(0, 24).map(s => s.slice(0, 2) + "h"));
+}
+function mappaCalore() {
+  const anni = D.meta.anni;
+  if (!anni.includes(annoHM)) annoHM = anni[anni.length - 1];
+  const seg = document.getElementById("hm-anni");
+  seg.innerHTML = anni.map(a => `<button type="button" id="hm-${a}" aria-pressed="${a === annoHM}" data-a="${a}">${a}</button>`).join("");
+  seg.onclick = e => { const b = e.target.closest("button"); if (!b) return; annoHM = +b.dataset.a; mappaCalore(); };
+  const map = agg("base", ["anno", "giorno", "ora"]);
+  const v = (g, o) => get(map, annoHM, g, o).n;
+  let max = 0;
+  for (let g = 0; g < 7; g++) for (let o = 0; o < 24; o++) max = Math.max(max, v(g, o));
+  const ore = [...Array(24).keys()];
+  let h = `<thead><tr><th></th>${ore.map(o => `<th>${String(o).padStart(2, "0")}</th>`).join("")}<th>Tot.</th></tr></thead><tbody>`;
+  D.diz.giorno.forEach((giorno, g) => {
+    let tot = 0;
+    h += `<tr><th class="g">${giorno}</th>` + ore.map(o => {
+      const n = v(g, o); tot += n;
+      const q = max ? n / max : 0;
+      const bg = n ? `background: color-mix(in srgb, var(--s-blue) ${Math.round(8 + 92 * q)}%, var(--panel))` : `background: var(--grid)`;
+      return `<td class="${q > .5 ? "chiaro" : ""}" style="${bg}" title="${giorno}, ${D.diz.ora[o]}: ${fmt.format(n)} casi">${n || ""}</td>`;
+    }).join("") + `<td class="tot">${fmt.format(tot)}</td></tr>`;
+  });
+  h += `<tr class="tot"><th class="g">Totale</th>${ore.map(o => { let s = 0; for (let g = 0; g < 7; g++) s += v(g, o); return `<td>${fmt.format(s)}</td>`; }).join("")}<td></td></tr></tbody>`;
+  document.getElementById("hm").innerHTML = h;
+}
+
 function periodo() {
   const m = D.meta.mesi_ultimo_anno;
   return m >= 12 ? "anno intero" : m === 1 ? "gennaio" : `gennaio – ${MESI_LUNGHI[m - 1]}`;
@@ -816,6 +898,17 @@ window.addEventListener("error", e => mostraErrore(e.message || String(e)));
 window.addEventListener("unhandledrejection", e => mostraErrore(String(e.reason)));
 function aggiornaOra() {
   const t0 = performance.now();
+  if (pagina === "orari") {
+    sezione("Filtri", statoFiltri);
+    sezione("Totali", kpi);
+    sezione("Fasce orarie", fasceOrarie);
+    sezione("Mappa giorno × ora", mappaCalore);
+    sezione("Giorno della settimana", () => linee("c-giorno-o", "leg-giorno-o", "base", "giorno", D.diz.giorno));
+    sezione("Top Ateco", () => topAteco("c-ateco-o", "leg-ateco-o"));
+    sezione("Gestione tariffaria", gestGenere);
+    console.info(`Portale aggiornato in ${Math.round(performance.now() - t0)} ms`);
+    return;
+  }
   document.querySelectorAll("#terr-seg button").forEach((b, i) => b.setAttribute("aria-pressed", i === terr));
   sezione("Filtri", statoFiltri);
   sezione("Confronto territori", quadroConfronto);
@@ -833,6 +926,7 @@ function aggiornaOra() {
 
 async function apri(nome) {
   pagina = nome;
+  document.body.dataset.pagina = nome;
   document.querySelectorAll(".tabs a").forEach(a => a.setAttribute("aria-current", a.id === "tab-" + nome ? "page" : "false"));
   try { D = await carica(nome); }
   catch (e) {
@@ -841,12 +935,17 @@ async function apri(nome) {
   }
   for (const k in sel) sel[k].clear();
   if (tipo === "MA" && !haAccertati()) tipo = "MD";
+  if (tipo === "MD" && !haDenunciati()) tipo = "MA";
   const P = PAGINE[nome];
   document.getElementById("page-title").textContent = P.titolo;
   document.getElementById("page-desc").textContent = P.desc;
   document.getElementById("demo").hidden = !D.meta.demo;
   const m = D.meta;
-  document.getElementById("meta").innerHTML =
+  document.getElementById("foot-fonte").innerHTML = nome === "orari"
+    ? `Fonte: ${m.fonte} · ${m.file} file Excel`
+    : `Fonte: <a href="https://dati.inail.it/portale/it/dataset/open-api.html" target="_blank" rel="noopener">INAIL Open Data – Open API</a> · Licenza IODL 2.0`;
+  if (nome === "orari") document.getElementById("meta").innerHTML = `Anni <b>${m.anni.join(" · ")}</b><br>Banca dati statistica INAIL · <b>${m.file}</b> file`;
+  else document.getElementById("meta").innerHTML =
     `Anni <b>${m.anni.join(" · ")}</b>${nome === "mensile" ? ` · periodo <b>${periodo()}</b>` : ""}<br>Rilevazione INAIL al <b>${m.rilevazione ?? "–"}</b>` +
     (m.chiamate_fallite && m.chiamate_fallite.length ? `<br><span class="delta up" title="${m.chiamate_fallite.join('\n')}">Dati incompleti: ${m.chiamate_fallite.length} ${m.chiamate_fallite[0].startsWith("File") ? "regioni mancanti" : "chiamate API non riuscite"}</span>` : "");
   document.getElementById("mese-title").textContent = nome === "mensile" ? "Andamento mensile" : "Andamento per mese";
@@ -858,7 +957,7 @@ async function apri(nome) {
   aggiorna();
 }
 
-function daHash() { return location.hash === "#mensile" ? "mensile" : "semestrale"; }
+function daHash() { return location.hash === "#mensile" ? "mensile" : location.hash === "#orari" ? "orari" : "semestrale"; }
 window.addEventListener("hashchange", () => apri(daHash()));
 document.addEventListener("click", e => { const d = document.getElementById("ateco-dd"); if (d && d.open && !d.contains(e.target)) d.open = false; });
 
