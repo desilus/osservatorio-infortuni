@@ -68,6 +68,12 @@ h1, h2, h3 { font-family: var(--f-display); margin: 0; text-wrap: balance; lette
 .tabs a:hover, .seg button:hover { color: var(--ink); }
 .seg-label { font: 600 11px/1 var(--f-body); text-transform: uppercase; letter-spacing: .08em; color: var(--ink-3); }
 .terr { display: flex; align-items: center; gap: 10px; margin-left: auto; flex-wrap: wrap; }
+.sel-terr select { font: 600 13px/1.2 var(--f-body); color: var(--ink-2); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; max-width: 200px; cursor: pointer; }
+.sel-terr select:hover { color: var(--ink); }
+.sel-terr select.attivo { color: var(--ink); background: var(--panel); border-color: var(--accent); }
+.sel-terr select:disabled { opacity: .6; cursor: progress; }
+.vh { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.cmp tbody tr.extra td { border-top: 2px dashed var(--line); }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 .demo { background: var(--warn-bg); color: var(--warn-ink); font-size: 13px; padding: 8px 20px; text-align: center; }
@@ -186,6 +192,8 @@ table.hm { border-collapse: separate; border-spacing: 2px; width: 100%; min-widt
     <div class="terr">
       <span class="seg-label">Territorio</span>
       <div class="seg" id="terr-seg" role="group" aria-label="Territorio"></div>
+      <label class="sel-terr" id="box-regione" hidden><span class="vh">Altra regione</span><select id="sel-regione"></select></label>
+      <label class="sel-terr" id="box-provincia" hidden><span class="vh">Altra provincia</span><select id="sel-provincia"></select></label>
     </div>
   </div>
   <div class="demo" id="demo" hidden><b>Dati di esempio.</b> Numeri inventati per provare il portale: per i dati veri esegui <code>scarica_inail.py</code>.</div>
@@ -212,7 +220,7 @@ table.hm { border-collapse: separate; border-spacing: 2px; width: 100%; min-widt
   <pre class="errori" id="errori" hidden></pre>
 
   <section class="solo-od">
-    <div class="sec-h"><h2>Confronto tra territori</h2><p>Stessi filtri per tutti e quattro · clicca una riga per cambiare territorio</p></div>
+    <div class="sec-h"><h2>Confronto tra territori</h2><p>Stessi filtri per tutti i territori · clicca una riga per cambiare territorio · con i menu in alto aggiungi un'altra regione o provincia</p></div>
     <div class="panel tscroll"><table class="cmp" id="cmp"></table></div>
   </section>
 
@@ -364,7 +372,7 @@ function filtroMaschere(cubo, escludiTerr) {
   // per ogni dimensione filtrata: array booleano dei valori ammessi
   const m = [];
   for (const dim of cubo.dims) {
-    if (dim === "terr" && !escludiTerr) { const a = new Uint8Array(4); a[terr] = 1; m.push([cubo.col.terr, a]); continue; }
+    if (dim === "terr" && !escludiTerr) { const a = new Uint8Array(8); a[terr] = 1; m.push([cubo.col.terr, a]); continue; }
     const s = sel[dim];
     if (s && s.size) { const a = new Uint8Array(D.diz[dim].length); s.forEach(i => a[i] = 1); m.push([cubo.col[dim], a]); }
   }
@@ -461,11 +469,90 @@ const etichette = {
   },
 };
 
+/* ---------- altre regioni e province ---------- */
+// Il territorio scelto dai menu diventa il quinto (indice 4): i suoi conteggi vengono aggiunti in coda ai cubi.
+let extra = null;                 // { tipo: "regione"|"provincia", codice, nome, regione }
+const cacheExtra = {};
+function unisciExtra(ext) {
+  for (const [nome, c] of Object.entries(D.cubi)) {
+    if (c._n0 == null) c._n0 = c.col.n.length;
+    for (const k in c.col) c.col[k].length = c._n0;           // toglie l'eventuale territorio precedente
+    const e = ext && ext.cubi[nome] && ext.cubi[nome].col;
+    if (!e || !e.n) continue;
+    const len = e.n.length;
+    for (const k in c.col) {
+      const dst = c.col[k], src = e[k];
+      for (let i = 0; i < len; i++) dst.push(k === "terr" ? 4 : src ? src[i] : 0);
+    }
+  }
+}
+function vociTerritori() { return (D && D.meta && D.meta.territori) || { regioni: [], province: [] }; }
+async function applicaExtra() {
+  // (ri)applica il territorio scelto ai dati della pagina corrente
+  TERR.length = 4;
+  if (!extra || pagina === "orari") { if (D && D.cubi) unisciExtra(null); if (terr > 3) terr = 2; return; }
+  const elenco = extra.tipo === "regione" ? vociTerritori().regioni : vociTerritori().province;
+  const voce = elenco.find(v => v.codice === extra.codice);
+  if (!voce || !voce.file) { unisciExtra(null); extra = null; if (terr > 3) terr = 2; return; }
+  const sel = document.getElementById(extra.tipo === "regione" ? "sel-regione" : "sel-provincia");
+  sel.disabled = true;
+  try {
+    if (!cacheExtra[voce.file]) {
+      const r = await fetch(`data/${voce.file}`);
+      if (!r.ok) throw new Error(`Impossibile leggere data/${voce.file} (HTTP ${r.status})`);
+      cacheExtra[voce.file] = await r.json();
+    }
+    unisciExtra(cacheExtra[voce.file]);
+    TERR[4] = voce.nome;
+  } catch (e) {
+    mostraErrore(e.message); unisciExtra(null); extra = null; if (terr > 3) terr = 2;
+  } finally { sel.disabled = false; }
+}
+async function scegliTerritorio(tipoT, indice) {
+  const elenco = tipoT === "regione" ? vociTerritori().regioni : vociTerritori().province;
+  const voce = elenco[indice];
+  if (!voce) { extra = null; await applicaExtra(); aggiornaMenuTerritori(); aggiorna(); return; }
+  if (voce.rif != null) {                        // Lombardia, Brescia, Bergamo: sono già tra i pulsanti
+    extra = null; await applicaExtra(); terr = voce.rif;
+  } else {
+    extra = { tipo: tipoT, codice: voce.codice, nome: voce.nome, regione: voce.regione };
+    await applicaExtra();
+    if (extra) terr = 4;
+  }
+  aggiornaMenuTerritori(); aggiorna();
+}
+function costruisciMenuTerritori() {
+  const T = vociTerritori(), ok = T.regioni.length > 0;
+  document.getElementById("box-regione").hidden = !ok;
+  document.getElementById("box-provincia").hidden = !ok;
+  if (!ok) return;
+  const sr = document.getElementById("sel-regione"), sp = document.getElementById("sel-provincia");
+  sr.innerHTML = `<option value="">Altra regione…</option>` + T.regioni.map((v, i) => `<option value="${i}">${v.nome}</option>`).join("");
+  let h = `<option value="">Altra provincia…</option>`, reg = null;
+  T.province.forEach((v, i) => {
+    if (v.regione !== reg) { if (reg) h += `</optgroup>`; reg = v.regione; h += `<optgroup label="${reg}">`; }
+    h += `<option value="${i}">${v.nome}</option>`;
+  });
+  sp.innerHTML = h + (reg ? `</optgroup>` : "");
+  sr.onchange = () => { sp.value = ""; scegliTerritorio("regione", sr.value === "" ? -1 : +sr.value); };
+  sp.onchange = () => { sr.value = ""; scegliTerritorio("provincia", sp.value === "" ? -1 : +sp.value); };
+  aggiornaMenuTerritori();
+}
+function aggiornaMenuTerritori() {
+  const T = vociTerritori();
+  const sr = document.getElementById("sel-regione"), sp = document.getElementById("sel-provincia");
+  const iR = extra && extra.tipo === "regione" ? T.regioni.findIndex(v => v.codice === extra.codice) : -1;
+  const iP = extra && extra.tipo === "provincia" ? T.province.findIndex(v => v.codice === extra.codice) : -1;
+  sr.value = iR >= 0 ? String(iR) : ""; sp.value = iP >= 0 ? String(iP) : "";
+  sr.classList.toggle("attivo", iR >= 0 && terr === 4);
+  sp.classList.toggle("attivo", iP >= 0 && terr === 4);
+}
+
 /* ---------- interfaccia ---------- */
 function costruisciTerritori() {
   const box = document.getElementById("terr-seg");
-  box.innerHTML = TERR.map((t, i) => `<button type="button" id="terr-${i}" aria-pressed="${i === terr}">${t}</button>`).join("");
-  box.querySelectorAll("button").forEach((b, i) => b.onclick = () => { terr = i; aggiorna(); });
+  box.innerHTML = TERR.slice(0, 4).map((t, i) => `<button type="button" id="terr-${i}" aria-pressed="${i === terr}">${t}</button>`).join("");
+  box.querySelectorAll("button").forEach((b, i) => b.onclick = () => { terr = i; aggiornaMenuTerritori(); aggiorna(); });
 }
 function costruisciFiltri() {
   const box = document.getElementById("filters");
@@ -605,6 +692,7 @@ function quadroConfronto() {
   const iND = D.diz.naz.findIndex(v => v.startsWith("Non"));
   // quota sul territorio che lo contiene: Lombardia su Italia, province su Lombardia
   const PADRE = { 1: 0, 2: 1, 3: 1 };
+  if (extra) PADRE[4] = extra.tipo === "provincia" && extra.regione === "Lombardia" ? 1 : 0;
 
   let h = `<thead><tr><th>Territorio</th>${anni.map(a => `<th>${a}</th>`).join("")}
     <th class="grp">Quota<br>${ult}</th><th class="grp">Var. ${prec ?? ""}→${ult}</th><th class="grp">Maschi<br>${ult}</th><th>Femmine<br>${ult}</th><th>In itinere<br>${ult}</th><th>Nati all'estero<br>${ult}</th><th class="grp">Mortali<br>denunciati ${ult}</th>${haAccertati() ? `<th>Mortali<br>accertati ${ult}</th>` : ""}</tr></thead><tbody>`;
@@ -616,7 +704,7 @@ function quadroConfronto() {
     const it = iIT >= 0 ? get(mo, t, ult, iIT).n / nU : NaN;
     const est = (nU - (iITA >= 0 ? get(nz, t, ult, iITA).n : 0) - (iND >= 0 ? get(nz, t, ult, iND).n : 0)) / nU;
     const mD = get(tot, t, ult).md, mA = get(tot, t, ult).ma;
-    h += `<tr class="${t === terr ? "sel" : ""}" data-t="${t}" tabindex="0">
+    h += `<tr class="${t === terr ? "sel" : ""} ${t === 4 ? "extra" : ""}" data-t="${t}" tabindex="0">
       <td class="terr-n">${nome}</td>
       ${anni.map(a => a === ult ? `<td><b>${fmt.format(get(tot, t, a).n)}</b></td>` : `<td>${fmt.format(get(tot, t, a).n)}</td>`).join("")}
       <td class="grp">${quotaHtml(t, nU)}</td>
@@ -634,7 +722,7 @@ function quadroConfronto() {
   const tb = document.getElementById("cmp");
   tb.innerHTML = h;
   tb.querySelectorAll("tbody tr").forEach(r => {
-    r.onclick = () => { terr = +r.dataset.t; aggiorna(); };
+    r.onclick = () => { terr = +r.dataset.t; aggiornaMenuTerritori(); aggiorna(); };
     r.onkeydown = e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); r.click(); } };
   });
 }
@@ -934,6 +1022,9 @@ async function apri(nome) {
     return;
   }
   for (const k in sel) sel[k].clear();
+  costruisciMenuTerritori();
+  await applicaExtra();
+  aggiornaMenuTerritori();
   if (tipo === "MA" && !haAccertati()) tipo = "MD";
   if (tipo === "MD" && !haDenunciati()) tipo = "MA";
   const P = PAGINE[nome];

@@ -66,6 +66,33 @@ REGIONI = {
 TERRITORI = ["Italia", "Lombardia", "Brescia", "Bergamo"]
 PROVINCE = {"017": "Brescia", "016": "Bergamo"}
 
+# Nomi delle regioni come compaiono nei menu del portale
+REGIONI_NOMI = {
+    "ABRUZZO": "Abruzzo", "BASILICATA": "Basilicata", "CALABRIA": "Calabria", "CAMPANIA": "Campania",
+    "EMILIA ROMAGNA": "Emilia-Romagna", "FRIULI VENEZIA GIULIA": "Friuli-Venezia Giulia", "LAZIO": "Lazio",
+    "LIGURIA": "Liguria", "LOMBARDIA": "Lombardia", "MARCHE": "Marche", "MOLISE": "Molise", "PIEMONTE": "Piemonte",
+    "PUGLIA": "Puglia", "SARDEGNA": "Sardegna", "SICILIA": "Sicilia", "TOSCANA": "Toscana",
+    "TRENTINO ALTO ADIGE": "Trentino-Alto Adige", "UMBRIA": "Umbria", "VALLE D'AOSTA": "Valle d'Aosta", "VENETO": "Veneto",
+}
+# Codici ISTAT delle province: usati solo se la tabella INAIL Provincia.csv non si scarica
+PROVINCE_RISERVA = dict(x.split(":") for x in (
+    "001:Torino 002:Vercelli 003:Novara 004:Cuneo 005:Asti 006:Alessandria 007:Aosta 008:Imperia 009:Savona "
+    "010:Genova 011:La_Spezia 012:Varese 013:Como 014:Sondrio 015:Milano 016:Bergamo 017:Brescia 018:Pavia "
+    "019:Cremona 020:Mantova 021:Bolzano 022:Trento 023:Verona 024:Vicenza 025:Belluno 026:Treviso 027:Venezia "
+    "028:Padova 029:Rovigo 030:Udine 031:Gorizia 032:Trieste 033:Piacenza 034:Parma 035:Reggio_Emilia 036:Modena "
+    "037:Bologna 038:Ferrara 039:Ravenna 040:Forlì-Cesena 041:Pesaro_e_Urbino 042:Ancona 043:Macerata "
+    "044:Ascoli_Piceno 045:Massa-Carrara 046:Lucca 047:Pistoia 048:Firenze 049:Livorno 050:Pisa 051:Arezzo "
+    "052:Siena 053:Grosseto 054:Perugia 055:Terni 056:Viterbo 057:Rieti 058:Roma 059:Latina 060:Frosinone "
+    "061:Caserta 062:Benevento 063:Napoli 064:Avellino 065:Salerno 066:L'Aquila 067:Teramo 068:Pescara "
+    "069:Chieti 070:Campobasso 071:Foggia 072:Bari 073:Taranto 074:Brindisi 075:Lecce 076:Potenza 077:Matera "
+    "078:Cosenza 079:Catanzaro 080:Reggio_Calabria 081:Trapani 082:Palermo 083:Messina 084:Agrigento "
+    "085:Caltanissetta 086:Enna 087:Catania 088:Ragusa 089:Siracusa 090:Sassari 091:Nuoro 092:Cagliari "
+    "093:Pordenone 094:Isernia 095:Oristano 096:Biella 097:Lecco 098:Lodi 099:Rimini 100:Prato 101:Crotone "
+    "102:Vibo_Valentia 103:Verbano-Cusio-Ossola 104:Olbia-Tempio 105:Ogliastra 106:Medio_Campidano "
+    "107:Carbonia-Iglesias 108:Monza_e_Brianza 109:Fermo 110:Barletta-Andria-Trani 111:Sud_Sardegna"
+).replace("_", "\x00").split())
+PROVINCE_RISERVA = {k: v.replace("\x00", " ") for k, v in PROVINCE_RISERVA.items()}
+
 CLASSI_ETA = [
     ("Fino a 14 anni", 0, 14), ("Da 15 a 19 anni", 15, 19), ("Da 20 a 24 anni", 20, 24),
     ("Da 25 a 29 anni", 25, 29), ("Da 30 a 34 anni", 30, 34), ("Da 35 a 39 anni", 35, 39),
@@ -324,6 +351,24 @@ def mappa(df: pd.DataFrame | None, chiave: str, valore: str, ripiego_valore: str
     return dict(zip(df[k].astype(str).str.strip(), df[v].astype(str).str.strip()))
 
 
+def nome_proprio(testo: str) -> str:
+    """'MONZA E DELLA BRIANZA' -> 'Monza e della Brianza'; i nomi già scritti bene restano come sono."""
+    if not testo.isupper():
+        return testo
+    minuscole = {"e", "di", "del", "della", "dell'", "nell'", "d'", "in", "la"}
+    parole = testo.title().split(" ")
+    out = []
+    for i, w in enumerate(parole):
+        lw = w.lower()
+        pref = next((m for m in ("nell'", "dell'", "d'") if lw.startswith(m) and len(lw) > len(m)), None)
+        if i and pref:
+            w = pref + w[len(pref)].upper() + w[len(pref) + 1:]
+        elif i and lw in minuscole:
+            w = lw
+        out.append(w)
+    return " ".join(out)
+
+
 def carica_tipologiche() -> dict:
     t = {}
     ateco = leggi_tipologica("SettoreAttivitaEconomica")
@@ -337,6 +382,10 @@ def carica_tipologiche() -> dict:
     t["definizione"] = {**DEFINIZIONE_RISERVA,
                         **mappa(leggi_tipologica("DefinizioneAmministrativa"),
                                 "DefinizioneAmministrativa", "DescrDefinizioneAmministrativa")}
+    prov = leggi_tipologica("Provincia")
+    t["prov_nome"] = {k.zfill(3): nome_proprio(v) for k, v in mappa(prov, "Provincia", "DescrProvincia").items() if v}
+    if not t["prov_nome"]:
+        t["prov_nome"] = dict(PROVINCE_RISERVA)
     print("Tabelle tipologiche caricate: " + ", ".join(
         f"{k} {len(v)} codici" for k, v in t.items() if isinstance(v, dict)))
     return t
@@ -428,6 +477,8 @@ def prepara(df: pd.DataFrame, tip: dict, dataset: str) -> pd.DataFrame:
     else:
         df["giorni_ind"] = 0
 
+    df["prov"] = df["LuogoAccadimento"].fillna("").astype(str).str.strip().str.zfill(3)
+
     # Territori: una riga può appartenere a più territori (Italia ⊃ Lombardia ⊃ Brescia)
     parti = [df.assign(terr="Italia")]
     lomb = df[df["_regione"] == "LOMBARDIA"]
@@ -458,6 +509,105 @@ def cubo(df: pd.DataFrame, dims: list[str], diz: dict) -> dict:
     return {"dims": dims, "righe": len(g), "col": col}
 
 
+def cubi_divisi(df: pd.DataFrame, chiave: str, dims: list[str], diz: dict, con_ma: bool) -> dict:
+    """Come cubo(), ma un cubo per ogni valore di `chiave` (regione o provincia), con un solo groupby.
+    La dimensione 'terr' vale sempre 0: il portale la rimappa quando carica il territorio."""
+    altri = [d for d in dims if d != "terr"]
+    g = (df.groupby([chiave] + altri, observed=True)
+           .agg(n=("anno", "size"), md=("mort_den", "sum"), ma=("mort_acc", "sum"), gi=("giorni_ind", "sum"))
+           .reset_index())
+    for d in altri:
+        if d in diz:
+            g[d] = g[d].map({v: i for i, v in enumerate(diz[d])})
+    g = g.dropna(subset=altri)
+    out = {}
+    for k, gk in g.groupby(chiave, sort=False):
+        col = {"terr": [0] * len(gk)}
+        for d in altri:
+            col[d] = gk[d].astype(int).tolist()
+        col["n"] = gk["n"].astype(int).tolist()
+        col["md"] = gk["md"].astype(int).tolist()
+        if con_ma:
+            col["ma"] = gk["ma"].astype(int).tolist()
+        col["gi"] = gk["gi"].round().astype(int).tolist()
+        out[k] = {"dims": dims, "righe": len(gk), "col": col}
+    return out
+
+
+def slug(testo: str) -> str:
+    import unicodedata
+    t = unicodedata.normalize("NFKD", testo).encode("ascii", "ignore").decode().lower()
+    return re.sub(r"[^a-z0-9]+", "-", t).strip("-")
+
+
+def esporta_territori(base: pd.DataFrame, stesso: pd.DataFrame, dataset: str, filtri: list[str],
+                      diz: dict, con_ma: bool, tip: dict) -> dict:
+    """Scrive un file per ogni regione e provincia in data/<dataset>/ e restituisce l'indice per il menu."""
+    cartella = OUT / dataset
+    cartella.mkdir(parents=True, exist_ok=True)
+    for vecchio in cartella.glob("*.json"):
+        vecchio.unlink()
+
+    def scrivi(nome_file, cubi):
+        (cartella / nome_file).write_text(json.dumps({"cubi": cubi}, ensure_ascii=True, separators=(",", ":")),
+                                          encoding="utf-8")
+
+    def tutti_i_cubi(chiave):
+        return {
+            "base": cubi_divisi(stesso, chiave, filtri, diz, con_ma),
+            "eta": cubi_divisi(stesso, chiave, filtri + ["eta"], diz, con_ma),
+            "giorno": cubi_divisi(stesso, chiave, filtri + ["giorno"], diz, con_ma),
+            "mese": cubi_divisi(base, chiave, filtri + ["mese"], diz, con_ma),
+        }
+
+    def cubi_di(tutti, k):
+        vuoto = lambda nome: {"dims": tutti[nome][next(iter(tutti[nome]))]["dims"] if tutti[nome] else [],
+                              "righe": 0, "col": {}}
+        return {nome: tutti[nome].get(k) or vuoto(nome) for nome in tutti}
+
+    indice = {"regioni": [], "province": []}
+    # --- regioni (la voce "Altro" resta solo nel totale Italia)
+    tutti = tutti_i_cubi("_regione")
+    for reg in sorted(k for k in tutti["base"] if k in REGIONI_NOMI):
+        nome = REGIONI_NOMI[reg]
+        voce = {"nome": nome, "codice": reg}
+        if nome in TERRITORI:
+            voce["rif"] = TERRITORI.index(nome)
+        else:
+            voce["file"] = f"{dataset}/regione-{slug(nome)}.json"
+            scrivi(f"regione-{slug(nome)}.json", cubi_di(tutti, reg))
+        indice["regioni"].append(voce)
+
+    # --- province: la regione è quella del file CSV in cui compaiono più spesso
+    tutti = tutti_i_cubi("prov")
+    reg_di = base.groupby("prov")["_regione"].agg(lambda s: s.mode().iat[0])
+    senza_nome = []
+    for cod in sorted(tutti["base"]):
+        nome = tip.get("prov_nome", {}).get(cod) or PROVINCE_RISERVA.get(cod)
+        reg = reg_di.get(cod)
+        if not nome or reg not in REGIONI_NOMI:
+            senza_nome.append(cod)
+            continue
+        voce = {"nome": nome, "codice": cod, "regione": REGIONI_NOMI[reg]}
+        if cod in PROVINCE:
+            voce["rif"] = TERRITORI.index(PROVINCE[cod])
+        else:
+            voce["file"] = f"{dataset}/provincia-{cod}.json"
+            scrivi(f"provincia-{cod}.json", cubi_di(tutti, cod))
+        indice["province"].append(voce)
+    indice["province"].sort(key=lambda v: (v["regione"], v["nome"]))
+    n_file = len(list(cartella.glob("*.json")))
+    peso = sum(f.stat().st_size for f in cartella.glob("*.json")) / 1e6
+    print(f"[{dataset}] territori: {len(indice['regioni'])} regioni, {len(indice['province'])} province "
+          f"({n_file} file in {cartella}, {peso:.1f} MB in tutto)")
+    if senza_nome:
+        casi = base[base["prov"].isin(senza_nome)].shape[0]
+        print(f"  ! {len(senza_nome)} codici di luogo di accadimento senza nome di provincia, esclusi dai menu "
+              f"({casi} casi, che restano nel totale della regione e dell'Italia): {', '.join(senza_nome[:12])}",
+              file=sys.stderr)
+    return indice
+
+
 def ordina(valori, ordine=None):
     valori = list(dict.fromkeys(v for v in valori if pd.notna(v)))
     if ordine:
@@ -465,7 +615,7 @@ def ordina(valori, ordine=None):
     return sorted(valori)
 
 
-def esporta(df: pd.DataFrame, dataset: str, anni: list[int], falliti: list[str]) -> Path:
+def esporta(df: pd.DataFrame, dataset: str, anni: list[int], falliti: list[str], tip: dict | None = None) -> Path:
     df = df[df["anno"].isin(anni)]
     filtri = ["terr", "anno", "gestione", "genere", "modalita", "naz", "gest", "ateco"]
     if dataset == "semestrale":
@@ -509,6 +659,12 @@ def esporta(df: pd.DataFrame, dataset: str, anni: list[int], falliti: list[str])
         },
     }
     OUT.mkdir(parents=True, exist_ok=True)
+    # un file per ogni altra regione e provincia, caricato dal portale solo quando viene scelto
+    filtri_t = filtri
+    con_ma = "ma" in out["cubi"]["base"]["col"]
+    it = df[df["terr"] == "Italia"]
+    out["meta"]["territori"] = esporta_territori(it, stesso_periodo[stesso_periodo["terr"] == "Italia"],
+                                                 dataset, filtri_t, diz, con_ma, tip or {})
     f = OUT / f"{dataset}.json"
     f.write_text(json.dumps(out, ensure_ascii=True, separators=(",", ":")), encoding="utf-8")
     print(f"[{dataset}] scritto {f}  ({f.stat().st_size / 1e6:.1f} MB, "
@@ -697,12 +853,12 @@ def main():
     if a.solo in (None, "semestrale"):
         anni = a.anni_semestrale or [oggi.year - 3, oggi.year - 2, oggi.year - 1]
         raw, falliti = dati("semestrale", anni, list(range(1, 13)))
-        esporta(prepara(raw, tip, "semestrale"), "semestrale", anni, falliti)
+        esporta(prepara(raw, tip, "semestrale"), "semestrale", anni, falliti, tip)
 
     if a.solo in (None, "mensile"):
         anni = a.anni_mensile or [oggi.year - 1, oggi.year]
         raw, falliti = dati("mensile", anni, list(range(1, 13)))
-        esporta(prepara(raw, tip, "mensile"), "mensile", anni, falliti)
+        esporta(prepara(raw, tip, "mensile"), "mensile", anni, falliti, tip)
 
 
 if __name__ == "__main__":
