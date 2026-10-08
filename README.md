@@ -30,14 +30,15 @@ osservatorio-infortuni/
 │  └─ data/                file JSON letti dal portale (scritti dallo script)
 │     ├─ semestrale.json, mensile.json, orari.json, malattie.json
 │     └─ semestrale/, mensile/, malattie/   un file per ogni altra regione e provincia
-├─ csv_inail/              CSV/ZIP infortuni scaricati da INAIL        (solo in locale, non su GitHub)
+├─ csv_inail/              CSV/ZIP infortuni scaricati da INAIL        (anche su GitHub)
 ├─ csv_malattie/           CSV malattie professionali scaricati da INAIL (anche su GitHub)
-├─ ora_brescia/            Excel ora e giorno della banca dati          (solo in locale, non su GitHub)
+├─ ora_brescia/            Excel ora e giorno della banca dati          (anche su GitHub)
 └─ .venv/                  ambiente Python                              (solo in locale, non su GitHub)
 ```
 
-`csv_inail`, `ora_brescia` e il venv sono esclusi da git con `.gitignore`. Su GitHub vanno il codice, i JSON in `portale/data`,
-che bastano per far funzionare il sito, e la cartella `csv_malattie`.
+Su GitHub vanno il codice, i JSON in `portale/data`, che bastano per far funzionare il sito, e le tre cartelle dei dati grezzi,
+così chi clona il repository può rigenerare tutto. Restano fuori, con `.gitignore`, solo il venv e la cache dello script.
+GitHub rifiuta i file oltre 100 MB: per gli infortuni conviene tenere gli `.zip` invece dei `.csv` estratti.
 
 ---
 
@@ -54,7 +55,7 @@ pip install pandas requests openpyxl python-calamine
 
 Se PowerShell blocca `Activate.ps1`, lancia una volta `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`.
 
-Poi crea accanto a `pipeline` le tre cartelle per i dati grezzi: `csv_inail`, `csv_malattie`, `ora_brescia`.
+Le tre cartelle per i dati grezzi (`csv_inail`, `csv_malattie`, `ora_brescia`) arrivano con il repository; se mancano, creale accanto a `pipeline`.
 
 ## 2. Procurarsi i dati grezzi
 
@@ -163,13 +164,10 @@ git commit -m "Dati INAIL aggiornati"
 git push
 ```
 
-Prima di `git add` guarda `git status`. Devono comparire solo file in `pipeline/`, `portale/`, `csv_malattie/` e il README,
-mai `.venv`, `csv_inail` o `ora_brescia`. Se compaiono, il `.gitignore` deve contenere:
+Prima di `git add` guarda `git status`. Non deve mai comparire `.venv`. Se compare, il `.gitignore` deve contenere:
 
 ```
 .venv/
-csv_inail/
-ora_brescia/
 pipeline/cache/
 __pycache__/
 ```
@@ -181,7 +179,7 @@ Il token è come una password: non va mai scritto nei file del progetto, perché
 
 ### Lavorare in due
 
-- Il collega clona il repository, crea il **suo** venv (il punto 1) e mette accanto a `pipeline` le cartelle `csv_inail` e `ora_brescia` (`csv_malattie` arriva già con il repository).
+- Il collega clona il repository, crea il **suo** venv (il punto 1) e trova già nel repository le cartelle dei dati grezzi.
 - Per pubblicare va aggiunto come collaboratore (Settings → Collaborators) e usa il **suo** token.
 - Prima di lavorare fate sempre `git pull`.
 - Decidete chi rigenera i JSON: se lo fate in due insieme, i file di dati vanno in conflitto.
