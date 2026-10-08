@@ -304,7 +304,11 @@ def leggi_csv(cartella: Path, dataset: str) -> tuple[pd.DataFrame, list]:
 # Tabelle tipologiche
 # --------------------------------------------------------------------------
 def leggi_tipologica(nome: str) -> pd.DataFrame | None:
-    f = CACHE / "tipologiche" / f"{nome}.csv"
+    return leggi_tipologica_nome(nome, nome)
+
+
+def leggi_tipologica_nome(nome: str, nome_cache: str) -> pd.DataFrame | None:
+    f = CACHE / "tipologiche" / f"{nome_cache}.csv"
     f.parent.mkdir(parents=True, exist_ok=True)
     if not f.exists():
         try:
@@ -321,8 +325,21 @@ def leggi_tipologica(nome: str) -> pd.DataFrame | None:
             break
         except UnicodeDecodeError:
             continue
-    sep = ";" if testo.splitlines()[0].count(";") >= testo.splitlines()[0].count(",") else ","
-    return pd.read_csv(io.StringIO(testo), sep=sep, dtype=str, keep_default_na=False)
+    righe = [r for r in testo.splitlines() if r.strip()]
+    # file vuoto o pagina web al posto del CSV: lo scartiamo (e lo cancelliamo, così si riprova la volta dopo)
+    if len(righe) < 2 or righe[0].lstrip().startswith("<"):
+        print(f"  ! tabella {nome}: il file scaricato è vuoto o non è un CSV, uso etichette di riserva", file=sys.stderr)
+        try:
+            f.unlink()
+        except OSError:
+            pass
+        return None
+    sep = ";" if righe[0].count(";") >= righe[0].count(",") else ","
+    try:
+        return pd.read_csv(io.StringIO(testo), sep=sep, dtype=str, keep_default_na=False)
+    except Exception as e:  # noqa: BLE001
+        print(f"  ! tabella {nome} non leggibile ({e}), uso etichette di riserva", file=sys.stderr)
+        return None
 
 
 def colonna(df: pd.DataFrame, nome: str, ripiego: str | None = None) -> str | None:
@@ -836,7 +853,15 @@ def main():
                    help="non usare l'API: leggi i CSV/ZIP già scaricati dal portale INAIL in questa cartella")
     p.add_argument("--ora-giorno", metavar="CARTELLA", type=Path,
                    help="elabora solo gli Excel ora/giorno di Brescia (banca dati statistica) in questa cartella")
+    p.add_argument("--malattie", metavar="CSV_O_CARTELLA", type=Path,
+                   help="elabora solo le malattie professionali (CSV semestrale per data di protocollo, Italia)")
+    p.add_argument("--anni-malattie", type=int, nargs="+", help="default: gli ultimi tre anni presenti nel file")
     a = p.parse_args()
+
+    if a.malattie:
+        import malattie
+        malattie.esegui(a.malattie, a.anni_malattie)
+        return
 
     if a.ora_giorno:
         ora_giorno(a.ora_giorno)

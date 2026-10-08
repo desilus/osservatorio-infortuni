@@ -8,8 +8,6 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo+Narrow:wght@500;600;700&display=swap">
-</head>
-<body>
 <style>
 /* Layout: barra fissa con pagine + territorio, riga filtri, poi quadro di confronto e griglia di grafici a due colonne */
 :root {
@@ -121,6 +119,8 @@ details.ateco[open] summary { border-color: var(--accent); }
 .ateco-list .cod { font-weight: 600; color: var(--ink); white-space: nowrap; font-variant-numeric: tabular-nums; }
 .ateco-list .des { color: var(--ink-2); }
 .ateco-list .cnt { color: var(--ink-3); font-size: 12px; font-variant-numeric: tabular-nums; text-align: right; }
+.tendina-list label { display: flex; gap: 8px; align-items: flex-start; }
+.tendina-list input[type="checkbox"] { margin-top: 2px; }
 .ateco-vuoto { color: var(--ink-3); padding: 16px 4px; margin: 0; }
 .ateco-act { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--line); font-size: 12px; color: var(--ink-3); }
 .ateco-act button { font: 600 12px var(--f-body); color: var(--accent); background: none; border: 0; cursor: pointer; padding: 4px; }
@@ -166,6 +166,8 @@ table.cmp { width: 100%; border-collapse: collapse; font-variant-numeric: tabula
 .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; }
 .note { font-size: 12px; color: var(--ink-3); margin-top: 8px; }
 body[data-pagina="orari"] .solo-od, body:not([data-pagina="orari"]) .solo-orari, body[data-pagina="orari"] .terr { display: none !important; }
+body[data-pagina="malattie"] .solo-od:not(.solo-mp-anche), body[data-pagina="malattie"] .no-mp, body:not([data-pagina="malattie"]) .solo-mp { display: none !important; }
+.icd-scelta { display: flex; align-items: center; gap: 10px; }
 .hm-testa { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
 table.hm { border-collapse: separate; border-spacing: 2px; width: 100%; min-width: 820px; font-variant-numeric: tabular-nums; }
 .hm th { font: 600 11px/1.2 var(--f-body); color: var(--ink-3); padding: 4px 1px; text-align: center; }
@@ -178,6 +180,51 @@ table.hm { border-collapse: separate; border-spacing: 2px; width: 100%; min-widt
 .errori { margin: 12px 0 0; padding: 10px 14px; border: 1px solid var(--up); border-radius: 8px; color: var(--up); background: var(--panel); white-space: pre-wrap; font: 12.5px/1.4 ui-monospace, Consolas, monospace; }
 .foot { margin-top: 28px; font-size: 12px; color: var(--ink-3); border-top: 1px solid var(--line); padding-top: 12px; display: flex; flex-wrap: wrap; gap: 6px 20px; justify-content: space-between; }
 .foot a { color: var(--accent); }
+.titolo-riga { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.info-btn { display: inline-flex; align-items: center; gap: 6px; font: 600 13px/1 var(--f-body); color: var(--accent); background: var(--panel); border: 1px solid var(--line); border-radius: 999px; padding: 5px 12px 5px 5px; cursor: pointer; }
+.info-btn:hover, .info-btn[aria-expanded="true"] { border-color: var(--accent); background: var(--accent-soft); }
+.info-btn .q { display: inline-grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: var(--accent); color: var(--panel); font-size: 12px; font-weight: 700; }
+.info-btn .fr { font-size: 10px; transition: transform .15s; }
+.info-btn[aria-expanded="true"] .fr { transform: rotate(180deg); }
+.info-pan { position: relative; margin: 0 0 16px; padding: 18px 20px 6px; background: var(--panel); border: 1px solid var(--line); border-left: 3px solid var(--accent); border-radius: 10px; }
+.info-pan .chiudi { position: absolute; top: 8px; right: 10px; border: 0; background: none; color: var(--ink-3); font-size: 22px; line-height: 1; cursor: pointer; padding: 4px 8px; border-radius: 6px; }
+.info-pan .chiudi:hover { color: var(--ink); background: var(--bg); }
+.info-griglia { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 4px 32px; }
+.info-griglia h3 { font-size: 16px; margin: 0 0 8px; color: var(--accent); }
+.info-griglia dl { margin: 0 0 14px; }
+.info-griglia dt { font-weight: 600; color: var(--ink); margin-top: 8px; }
+.info-griglia dd { margin: 2px 0 0; color: var(--ink-2); font-size: 13px; }
+.tabs { max-width: 100%; overflow-x: auto; scrollbar-width: thin; }
+@media (max-width: 600px) { .info-pan { padding: 16px 14px 4px; } .info-griglia { grid-template-columns: 1fr; } }
+.stampa-testa { display: none; }
+@page { size: A4 landscape; margin: 10mm; }
+@media print {
+  * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body { background: #fff; font-size: 12px; }
+  .top, .filtri-sticky, .info-btn, .info-pan, .errori, .icd-scelta .seg button[aria-pressed="false"] { display: none !important; }
+  .wrap { max-width: none; padding: 0; }
+  .stampa-testa { display: block; border-bottom: 2px solid var(--accent); padding-bottom: 8px; margin-bottom: 4px; }
+  .stampa-testa .st-riga { display: flex; justify-content: space-between; gap: 16px; font-size: 11px; color: var(--ink-3); }
+  .stampa-testa .st-riga b { color: var(--ink); font-family: var(--f-display); font-size: 14px; }
+  .stampa-testa .st-filtri { margin-top: 6px; font-size: 12px; color: var(--ink-2); }
+  .stampa-testa .st-filtri b { color: var(--ink); }
+  .stampa-testa .st-demo { margin-top: 4px; font-size: 11px; color: var(--warn-ink); }
+  .head { padding-block: 8px 6px; }
+  .head h1 { font-size: 22px; }
+  section { margin-top: 14px; }
+  .panel, .kpi, .cmp tr, .hm tr { break-inside: avoid; }
+  .sec-h { break-after: avoid; }
+  section:has(#cmp) .sec-h p { display: none; }
+  .panel { box-shadow: none; }
+  .tscroll { overflow: visible; }
+  .cmp { font-size: 11px; }
+  .grid2 { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+  .grid3 { grid-template-columns: repeat(var(--cols, 3), minmax(0, 1fr)) !important; }
+  .grid2, .grid3, .kpis { gap: 10px; }
+  .chart { height: auto !important; text-align: center; }
+  canvas { width: auto !important; height: auto !important; max-width: 100% !important; max-height: 300px !important; }
+  .foot { break-inside: avoid; }
+}
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
 </style>
 
@@ -188,6 +235,7 @@ table.hm { border-collapse: separate; border-spacing: 2px; width: 100%; min-widt
       <a href="#semestrale" id="tab-semestrale">Semestrale · denunce ed esiti</a>
       <a href="#mensile" id="tab-mensile">Mensile · denunce</a>
       <a href="#orari" id="tab-orari">Orari · Brescia</a>
+      <a href="#malattie" id="tab-malattie">Malattie professionali</a>
     </nav>
     <div class="terr">
       <span class="seg-label">Territorio</span>
@@ -200,12 +248,18 @@ table.hm { border-collapse: separate; border-spacing: 2px; width: 100%; min-widt
 </header>
 
 <main class="wrap">
+  <div class="stampa-testa" id="stampa-testa" aria-hidden="true"></div>
   <div class="head">
     <div>
-      <h1 id="page-title">Infortuni sul lavoro</h1>
+      <div class="titolo-riga"><h1 id="page-title">Infortuni sul lavoro</h1><button type="button" class="info-btn" id="info-btn" aria-expanded="false" aria-controls="info-pan"><span class="q" aria-hidden="true">?</span>Info <span class="fr" aria-hidden="true">▾</span></button><button type="button" class="info-btn" id="pdf-btn" title="Apre la finestra di stampa: come stampante scegli «Salva come PDF»"><span class="q" aria-hidden="true">⤓</span>PDF</button></div>
       <p id="page-desc"></p>
     </div>
     <div class="meta" id="meta"></div>
+  </div>
+
+  <div class="info-pan" id="info-pan" role="region" aria-labelledby="info-btn" hidden>
+    <button type="button" class="chiudi" id="info-chiudi" aria-label="Chiudi la legenda">×</button>
+    <div class="info-griglia" id="info-griglia"></div>
   </div>
 
   <div class="filtri-sticky" id="filtri-sticky">
@@ -219,7 +273,7 @@ table.hm { border-collapse: separate; border-spacing: 2px; width: 100%; min-widt
   </div>
   <pre class="errori" id="errori" hidden></pre>
 
-  <section class="solo-od">
+  <section class="solo-od solo-mp-anche">
     <div class="sec-h"><h2>Confronto tra territori</h2><p>Stessi filtri per tutti i territori · clicca una riga per cambiare territorio · con i menu in alto aggiungi un'altra regione o provincia</p></div>
     <div class="panel tscroll"><table class="cmp" id="cmp"></table></div>
   </section>
@@ -281,7 +335,7 @@ table.hm { border-collapse: separate; border-spacing: 2px; width: 100%; min-widt
     </div>
   </section>
 
-  <section>
+  <section class="no-mp">
     <div class="sec-h"><h2>Genere e gestione tariffaria</h2><p>Il dataset INAIL non contiene la dimensione aziendale: qui la gestione tariffaria per genere</p></div>
     <div class="grid3" id="gest-genere"></div>
   </section>
@@ -310,6 +364,92 @@ table.hm { border-collapse: separate; border-spacing: 2px; width: 100%; min-widt
     </div>
   </section>
 
+  <section class="solo-mp">
+    <div class="sec-h"><h2>Malattie denunciate</h2>
+      <div class="icd-scelta"><span class="seg-label">Codice ICD-10</span><div class="seg" id="icd-seg" role="group" aria-label="Codice ICD-10">
+        <button type="button" id="icd-d" data-k="d" aria-pressed="true">Denunciato</button><button type="button" id="icd-a" data-k="a" aria-pressed="false">Accertato</button></div></div></div>
+    <div class="grid2">
+      <div class="panel">
+        <h3>Per gruppo di malattie (settore ICD-10)</h3>
+        <p class="sub" id="icd-sett-sub">Casi per anno di protocollo</p>
+        <div class="legend" id="leg-icd-sett"></div>
+        <div class="chart" style="height:360px"><canvas id="c-icd-sett"></canvas></div>
+      </div>
+      <div class="panel">
+        <h3>Le 10 malattie più denunciate (classe ICD-10)</h3>
+        <p class="sub">Ordinate sull'anno più recente</p>
+        <div class="legend" id="leg-icd"></div>
+        <div class="chart" style="height:360px"><canvas id="c-icd"></canvas></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="solo-mp">
+    <div class="sec-h"><h2>Agente causale e settore</h2><p id="agente-nota">Valorizzati solo per i casi riconosciuti</p></div>
+    <div class="grid2">
+      <div class="panel">
+        <h3>Agente causale: grandi gruppi</h3>
+        <p class="sub">Casi riconosciuti per anno</p>
+        <div class="legend" id="leg-agg"></div>
+        <div class="chart" style="height:300px"><canvas id="c-agg"></canvas></div>
+      </div>
+      <div class="panel">
+        <h3>I 10 agenti causali più frequenti</h3>
+        <p class="sub">Gruppi di agenti, ordinati sull'anno più recente</p>
+        <div class="legend" id="leg-ag"></div>
+        <div class="chart" style="height:300px"><canvas id="c-ag"></canvas></div>
+      </div>
+      <div class="panel">
+        <h3>Settore correlato alla malattia</h3>
+        <p class="sub">Casi riconosciuti per anno</p>
+        <div class="legend" id="leg-sett"></div>
+        <div class="chart" style="height:300px"><canvas id="c-sett"></canvas></div>
+      </div>
+      <div class="panel">
+        <h3>I 10 sottosettori più frequenti</h3>
+        <p class="sub">Ordinati sull'anno più recente</p>
+        <div class="legend" id="leg-sub"></div>
+        <div class="chart" style="height:300px"><canvas id="c-sub"></canvas></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="solo-mp">
+    <div class="sec-h"><h2>Esito, tabellazione e indennizzo</h2><p>Quota dei casi per anno</p></div>
+    <div class="grid2">
+      <div class="panel"><h3>Esito della definizione</h3><p class="sub">Positivo = malattia riconosciuta di origine professionale</p>
+        <div class="legend" id="leg-mp-esito"></div><div class="chart" style="height:190px"><canvas id="c-mp-esito"></canvas></div></div>
+      <div class="panel"><h3>Malattie tabellate e non tabellate</h3><p class="sub">Tabellate = presenti nelle tabelle di legge (D.M. 9 aprile 2008)</p>
+        <div class="legend" id="leg-mp-tab"></div><div class="chart" style="height:190px"><canvas id="c-mp-tab"></canvas></div></div>
+      <div class="panel"><h3>Tipo di indennizzo</h3><p class="sub">Prestazione erogata da INAIL</p>
+        <div class="legend" id="leg-mp-ind"></div><div class="chart" style="height:190px"><canvas id="c-mp-ind"></canvas></div></div>
+      <div class="panel"><h3>Grado di menomazione</h3><p class="sub">Classi di danno biologico del singolo caso</p>
+        <div class="legend" id="leg-mp-grado"></div><div class="chart" style="height:190px"><canvas id="c-mp-grado"></canvas></div></div>
+    </div>
+  </section>
+
+  <section class="solo-mp" id="sec-decessi">
+    <div class="sec-h"><h2 id="dec-titolo">Decessi per malattia professionale</h2><p id="dec-nota">Per anno di morte · dal file INAIL per data di decesso</p></div>
+    <div class="kpis" id="dec-kpis"></div>
+    <div class="grid2" style="margin-top:14px">
+      <div class="panel"><h3>Età alla morte</h3><p class="sub">Lavoratori deceduti per anno di morte</p>
+        <div class="legend" id="leg-dec-eta"></div><div class="chart" style="height:280px"><canvas id="c-dec-eta"></canvas></div></div>
+      <div class="panel"><h3>Silicosi e asbestosi</h3><p class="sub">Quota dei decessi dovuti a silicosi o asbestosi</p>
+        <div class="legend" id="leg-dec-sil"></div><div class="chart" style="height:150px"><canvas id="c-dec-sil"></canvas></div>
+        <h3 style="margin-top:14px">Nazionalità</h3><p class="sub">Quota dei decessi per luogo di nascita</p>
+        <div class="legend" id="leg-dec-naz"></div><div class="chart" style="height:150px"><canvas id="c-dec-naz"></canvas></div></div>
+    </div>
+  </section>
+
+  <section class="solo-mp">
+    <div class="panel">
+      <h3>Andamento per mese di protocollo</h3>
+      <p class="sub">Casi denunciati per mese, per anno</p>
+      <div class="legend" id="leg-mp-mese"></div>
+      <div class="chart" style="height:280px"><canvas id="c-mp-mese"></canvas></div>
+    </div>
+  </section>
+
   <footer class="foot">
     <span id="foot-fonte">Fonte: <a href="https://dati.inail.it/portale/it/dataset/open-api.html" target="_blank" rel="noopener">INAIL Open Data – Open API</a> · Licenza IODL 2.0</span>
     <span id="foot-gen"></span>
@@ -327,10 +467,18 @@ const FILTRI = [
   { dim: "naz",      label: "Nazionalità", short: v => v.split(" – ")[0] },
   { dim: "gestione", label: "Gestione" },
   { dim: "gest",     label: "Gestione tariffaria" },
-  { dim: "esito",    label: "Esito definizione", only: "semestrale" },
+  { dim: "esito",    label: "Esito definizione", only: ["semestrale", "malattie"] },
+  { dim: "tab",      label: "Tabellata", short: v => v === "Tabellata" ? "Sì" : v === "Non tabellata" ? "No" : v },
+  { dim: "asb",      label: "Asbesto", short: v => v === "Asbesto-correlata" ? "Sì" : v.startsWith("Non asbesto") ? "No" : v },
+  { dim: "icdg",     label: "Gruppo di malattie", tendina: true },
+  { dim: "settc",    label: "Settore correlato", tendina: true },
 ];
 const nomeTerr = () => pagina === "orari" ? "Brescia" : TERR[terr];
 const PAGINE = {
+  malattie: {
+    titolo: "Malattie professionali · ultimo triennio",
+    desc: "Open Data INAIL, dati semestrali per anno di protocollo. Ogni caso è una malattia denunciata: un lavoratore può averne più di una nello stesso anno. Il territorio è quello della sede INAIL che tratta il caso.",
+  },
   orari: {
     titolo: "Ora e giorno degli infortuni · Brescia",
     desc: "Banca dati statistica INAIL, infortuni definiti, gestione Industria e servizi: solo i casi accertati positivi (riconosciuti da INAIL), per ora solare e giorno della settimana, provincia di Brescia. Non sono le denunce: per confrontarli con la pagina Semestrale usa Esito = Positivo e Gestione = Industria e servizi.",
@@ -345,6 +493,138 @@ const PAGINE = {
   },
 };
 
+/* ---------- report PDF: stampa della pagina con i filtri attivi ---------- */
+let statoStampa = null;
+function preparaStampa() {
+  if (statoStampa || !D) return;
+  const ora = new Date(), oggi = ora.toLocaleDateString("it-IT"), m = D.meta;
+  const tema = document.documentElement.getAttribute("data-theme");
+  const scuro = tema === "dark" || (tema !== "light" && matchMedia("(prefers-color-scheme: dark)").matches);
+  statoStampa = { tema, scuro, titolo: document.title };
+  document.getElementById("stampa-testa").innerHTML =
+    `<div class="st-riga"><b>Osservatorio infortuni · report</b><span>Report del ${oggi} alle ${ora.toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" })}</span></div>` +
+    `<div class="st-filtri">Territorio e filtri: ${document.getElementById("riepilogo").innerHTML}` +
+    (extra && terr !== 4 ? ` · nel confronto anche <b>${esc(extra.nome)}</b>` : "") + `</div>` +
+    (m.demo ? `<div class="st-demo">Dati di esempio, non reali.</div>` : "");
+  const nomeFile = ["Report", PAGINE[pagina].titolo.split(" · ")[0], nomeTerr(), ora.toISOString().slice(0, 10)].join(" - ");
+  document.title = nomeFile.replace(/[\\/:*?"<>|]/g, "");
+  if (scuro) document.documentElement.setAttribute("data-theme", "light");
+  chartBase(); aggiornaOra();            // grafici ridisegnati subito in chiaro, prima che il browser impagini
+}
+function chiudiStampa() {
+  if (!statoStampa) return;
+  const { tema, scuro, titolo } = statoStampa;
+  statoStampa = null;
+  document.title = titolo;
+  if (scuro) { if (tema) document.documentElement.setAttribute("data-theme", tema); else document.documentElement.removeAttribute("data-theme"); }
+  chartBase(); aggiornaOra();
+}
+window.addEventListener("beforeprint", preparaStampa);
+window.addEventListener("afterprint", chiudiStampa);
+/* ---------- legenda (pulsante Info) ---------- */
+// ogni pagina: blocchi con titolo e coppie [voce, spiegazione]; "nota" = riga a tutta larghezza in testa
+const INFO_TERR_INF = ["Territori", "Italia comprende tutte le regioni e la voce INAIL \"Altro\". Brescia e Bergamo sono individuate dal luogo di accadimento dell'infortunio. Con i menu in alto puoi aggiungere un'altra regione o provincia, che compare anche come quinta riga del confronto."];
+const INFO_FILTRI_USO = ["Come si usano i filtri", "Nessuna voce scelta = tutte. Più voci dello stesso filtro si sommano (per esempio Agricoltura + Conto Stato); filtri diversi si combinano tra loro (Femmine e in itinere). I filtri valgono per tutti i territori e tutti i grafici. \"Azzera filtri\" li toglie tutti."];
+const INFO_FILTRI_INF = [
+  ["Genere", "Maschi o femmine, come registrato nella denuncia."],
+  ["Accadimento", "OL = in occasione di lavoro, durante l'attività. IT = in itinere, nel tragitto tra casa e lavoro (o tra due luoghi di lavoro, o verso il luogo del pasto)."],
+  ["Nazionalità", "Ricavata dal luogo di nascita: ITA = Italia, UE = altri paesi dell'Unione europea, EUE = paesi extra UE. Nella tabella \"Nati all'estero\" = UE + extra UE."],
+  ["Ateco", "Attività economica dell'azienda in cui lavora l'infortunato (sezione e divisione Ateco). \"Non determinato\" quando INAIL non la registra, per esempio per molti casi di Agricoltura e Conto Stato."],
+];
+const INFO_NAZ = ["Nazionalità", "Ricavata dal luogo di nascita: ITA = Italia, UE = altri paesi dell'Unione europea, EUE = paesi extra UE."];
+const INFO_GESTIONE = ["Gestione", "Industria e servizi = lavoratori delle aziende assicurate con INAIL (la gran parte dei casi). Agricoltura = lavoratori agricoli. Conto Stato = dipendenti delle amministrazioni dello Stato e studenti delle scuole statali, assicurati direttamente dallo Stato."];
+const INFO_GEST_TAR = ["Gestione tariffaria", "Suddivide la gestione Industria e servizi in Industria, Artigianato, Terziario e Altre attività, secondo la tariffa con cui l'azienda è assicurata. \"Non determinata\" per Agricoltura e Conto Stato, che non hanno tariffa."];
+const INFO_TABELLA_INF = [
+  ["Quota", "Peso del territorio sul territorio che lo contiene: Lombardia su Italia, Brescia e Bergamo su Lombardia (e sotto, su Italia). Una provincia non lombarda scelta dal menu è rapportata all'Italia."],
+  ["Var.", "Variazione dell'ultimo anno rispetto al precedente. ▲ rosso = più casi, ▼ verde = meno casi."],
+  ["Maschi, Femmine, In itinere, Nati all'estero", "Quota sul totale del territorio nell'ultimo anno."],
+];
+const INFO = {
+  semestrale: [
+    { titolo: "Misure", voci: [
+      ["Totale eventi", "Denunce di infortunio, per anno di accadimento. Senza filtro Esito sono tutte le denunce; con Esito = Positivo diventano gli infortuni riconosciuti da INAIL."],
+      ["Mortali denunciati", "Denunce in cui è registrata una data di morte del lavoratore."],
+      ["Mortali accertati", "Casi in cui INAIL ha riconosciuto che la morte è dovuta all'infortunio (esito mortale positivo). Sono di solito meno dei denunciati."],
+      ...INFO_TABELLA_INF,
+      ["Classe d'età", "Età dell'infortunato al momento dell'evento."],
+      ["Giorno della settimana", "Ricavato dalla data di accadimento. L'ora non è nel dataset: per Brescia c'è la scheda Orari."],
+    ]},
+    { titolo: "Filtri", voci: [
+      ["Tipologia", "C – In complesso = tutti i casi. M – Mortali denunciati e M – Mortali accertati = solo i casi mortali, contati come nelle due misure qui accanto."],
+      ...INFO_FILTRI_INF.slice(0, 3), INFO_GESTIONE, INFO_GEST_TAR, INFO_FILTRI_INF[3],
+      ["Esito definizione", "Positivo = infortunio riconosciuto e indennizzabile. Negativo = non riconosciuto (per esempio perché non è un infortunio sul lavoro o mancano i requisiti). In istruttoria = INAIL non ha ancora deciso."],
+    ]},
+    { titolo: "Da sapere", voci: [INFO_FILTRI_USO, INFO_TERR_INF,
+      ["Rilevazione", "I numeri sono quelli alla data di rilevazione indicata in alto a destra: l'ultimo anno può ancora cambiare leggermente alle pubblicazioni successive, soprattutto negli esiti."],
+      ["Dati non presenti", "Gli Open Data non contengono l'ora dell'evento né la dimensione dell'azienda: per questo al posto della dimensione aziendale c'è la gestione tariffaria."]] },
+  ],
+  mensile: [
+    { titolo: "Misure", voci: [
+      ["Totale eventi", "Denunce di infortunio nel periodo, per anno di accadimento."],
+      ["Mortali denunciati", "Denunce in cui è registrata una data di morte. Nel mensile non esistono i mortali accertati, perché l'accertamento non è ancora fatto."],
+      ...INFO_TABELLA_INF,
+      ["Stesso periodo", "Totali, età, Ateco e giorni della settimana confrontano gli stessi mesi nei due anni. Solo il grafico per mese mostra l'anno precedente intero."],
+    ]},
+    { titolo: "Filtri", voci: [
+      ["Tipologia", "C – In complesso = tutte le denunce. M – Mortali denunciati = solo le denunce con data di morte."],
+      ...INFO_FILTRI_INF.slice(0, 3), INFO_GESTIONE, INFO_GEST_TAR, INFO_FILTRI_INF[3],
+    ]},
+    { titolo: "Da sapere", voci: [INFO_FILTRI_USO, INFO_TERR_INF,
+      ["Perché i numeri cambiano", "Ogni mese INAIL aggiunge denunce arrivate in ritardo anche per i mesi già pubblicati: l'ultimo mese è sempre sottostimato."]] },
+  ],
+  orari: [
+    { titolo: "Misure e grafici", voci: [
+      ["Infortuni accertati", "Infortuni riconosciuti da INAIL, per anno di accadimento."],
+      ["Mortali accertati", "Infortuni in cui INAIL ha riconosciuto l'esito mortale."],
+      ["Fascia oraria", "Ora solare in cui è avvenuto l'infortunio: 08–09 = dalle 8:00 alle 8:59. \"Non determinata\" quando l'ora non è registrata."],
+      ["Mappa giorno e ora", "Ogni cella conta gli infortuni di quel giorno della settimana in quella fascia oraria, per l'anno scelto. Più scuro = più casi."],
+    ]},
+    { titolo: "Filtri", voci: [
+      ["Tipologia", "C – Accertati positivi = tutti i casi riconosciuti. M – Mortali accertati = solo i casi mortali."],
+      ...INFO_FILTRI_INF.slice(0, 2), INFO_NAZ, INFO_GEST_TAR, INFO_FILTRI_INF[3],
+    ]},
+    { titolo: "Da sapere", voci: [INFO_FILTRI_USO,
+      ["Solo Brescia", "Gli Excel sono stati esportati solo per la provincia di Brescia: per questo qui non c'è il selettore dei territori."]] },
+  ],
+  malattie: [
+    { titolo: "Misure", voci: [
+      ["Casi", "Malattie denunciate: ogni caso è una malattia. Un lavoratore può denunciarne più di una nello stesso anno."],
+      ["Lavoratori", "Persone distinte con almeno una malattia denunciata nell'anno. Mostra \"–\" quando sono attivi i filtri Tabellata, Asbesto, Gruppo di malattie, Settore correlato o una tipologia M: con questi incroci non si possono contare senza doppi conteggi."],
+      ["Riconosciuti", "Casi con esito positivo: INAIL ha riconosciuto l'origine professionale della malattia."],
+      ["Quota e Var.", "Come negli infortuni: peso sul territorio che contiene quello scelto e variazione rispetto all'anno prima (▲ rosso = più casi)."],
+      ["ICD-10 denunciato / accertato", "Classificazione internazionale delle malattie. Denunciato = codice indicato nella denuncia dal medico; accertato = codice stabilito da INAIL dopo la visita. Il selettore cambia solo i due grafici delle malattie."],
+      ["Agente causale", "Ciò che ha causato la malattia, per esempio rumore, sovraccarico biomeccanico, amianto. Solo per i casi riconosciuti."],
+      ["Settore e sottosettore correlato", "Ambito di lavoro a cui INAIL collega la malattia. Solo per i casi riconosciuti."],
+      ["Tipo di indennizzo", "Indennizzo in capitale = somma unica per menomazioni dal 6 al 15%. Rendita diretta = assegno periodico dal 16%. Rendita ai superstiti = ai familiari del lavoratore morto per la malattia. Nessun indennizzo = caso negativo o menomazione sotto il 6%."],
+      ["Grado di menomazione", "Percentuale di danno biologico permanente riconosciuta al singolo caso."],
+    ]},
+    { titolo: "Filtri", voci: [
+      ["Tipologia", "C – In complesso = tutti i casi. M – Casi con decesso = casi di lavoratori morti (data di morte presente), anche se la morte è di anni prima della denuncia. M – Decesso riconosciuto = casi in cui INAIL ha riconosciuto che la morte è dovuta alla malattia."],
+      INFO_GESTIONE, INFO_FILTRI_INF[0],
+      INFO_NAZ,
+      ["Esito definizione", "Positivo = malattia riconosciuta di origine professionale; Negativo = non riconosciuta."],
+      ["Tabellata", "Sì = malattia presente nelle tabelle di legge (D.M. 9 aprile 2008) per quella lavorazione: l'origine professionale si presume. No = il lavoratore deve dimostrarla."],
+      ["Asbesto", "Sì = malattia correlata all'amianto (mesotelioma, asbestosi, alcuni tumori del polmone)."],
+      ["Gruppo di malattie", "Settore ICD-10 della malattia denunciata: tumori, malattie del sistema osteomuscolare, dell'orecchio, ecc. Vale per tutti i casi."],
+      ["Settore correlato", "Ambito di lavoro collegato alla malattia. Esiste solo per i riconosciuti: se lo usi restano solo loro."],
+    ]},
+    { titolo: "Da sapere", voci: [INFO_FILTRI_USO,
+      ["Anno di protocollo", "È l'anno in cui INAIL ha registrato la denuncia. La malattia può essere insorta molti anni prima: è normale per tumori e malattie da amianto."],
+      ["Territori", "Il territorio è quello della sede INAIL che tratta il caso, non il luogo di lavoro. Italia comprende tutte le sedi."],
+      ["Decessi per malattia professionale", "Sezione a parte, dal file INAIL per data di decesso: lavoratori morti per una malattia professionale riconosciuta, per anno di morte. Esiste solo per Italia e regioni (per Brescia e Bergamo mostra la Lombardia). Valgono solo i filtri genere, nazionalità e gestione. Gli anni recenti crescono con gli aggiornamenti, perché il riconoscimento richiede tempo."]] },
+  ],
+};
+const esc = t => t.replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+function costruisciInfo() {
+  document.getElementById("info-griglia").innerHTML = (INFO[pagina] || []).map(b => `<div><h3>${esc(b.titolo)}</h3><dl>${b.voci.map(([t, d]) => `<dt>${esc(t)}</dt><dd>${esc(d)}</dd>`).join("")}</dl></div>`).join("");
+}
+function apriInfo(si) {
+  const btn = document.getElementById("info-btn");
+  document.getElementById("info-pan").hidden = !si;
+  btn.setAttribute("aria-expanded", si);
+  if (!si) btn.focus({ preventScroll: true });
+}
+
 const fmt = new Intl.NumberFormat("it-IT");
 const fmtK = n => n >= 10000 ? new Intl.NumberFormat("it-IT", { maximumFractionDigits: 2 }).format(n / 1000) + "K" : fmt.format(n);
 const pct = (x, d = 1) => isFinite(x) ? new Intl.NumberFormat("it-IT", { minimumFractionDigits: d, maximumFractionDigits: d }).format(x * 100) + "%" : "–";
@@ -353,6 +633,11 @@ const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).
 const cache = {};
 let D = null, pagina = "semestrale", terr = 2;      // Brescia di default
 let tipo = "C";                                   // C = in complesso, MD = mortali denunciati, MA = mortali accertati
+// nomi delle tipologie M: nelle malattie la morte può essere di anni prima del protocollo
+const ETIC = {
+  MD: () => pagina === "malattie" ? "M – Casi con decesso" : "M – Mortali denunciati",
+  MA: () => pagina === "malattie" ? "M – Decesso riconosciuto" : "M – Mortali accertati",
+};
 const haAccertati = () => !!(D && D.cubi.base.col.ma);
 const haDenunciati = () => !!(D && (D.cubi.base.col.md || D.cubi.base.col.m));
 const sel = {};                                   // dim -> Set di indici selezionati (vuoto = tutti)
@@ -557,17 +842,27 @@ function costruisciTerritori() {
 function costruisciFiltri() {
   const box = document.getElementById("filters");
   let h = `<div class="fgroup"><span class="seg-label">Tipologia</span><div class="chips">` +
-    [["C", pagina === "orari" ? "C – Accertati positivi" : "C – In complesso"], ...(haDenunciati() ? [["MD", "M – Mortali denunciati"]] : []), ...(haAccertati() ? [["MA", "M – Mortali accertati"]] : [])].map(([k, t]) =>
+    [["C", pagina === "orari" ? "C – Accertati positivi" : "C – In complesso"], ...(haDenunciati() ? [["MD", ETIC.MD()]] : []), ...(haAccertati() ? [["MA", ETIC.MA()]] : [])].map(([k, t]) =>
       `<button type="button" class="chip tipo" id="tipo-${k}" data-k="${k}" aria-pressed="${tipo === k}">${t}</button>`).join("") +
     `</div></div>`;
   for (const f of FILTRI) {
-    if (f.only && f.only !== pagina) continue;
+    if (f.only && ![].concat(f.only).includes(pagina)) continue;
     const vals = D.diz[f.dim]; if (!vals) continue;
+    if (f.tendina) {          // molte voci o etichette lunghe: menu a tendina con caselle
+      const s = sel[f.dim] || new Set();
+      h += `<div class="fgroup"><span class="seg-label">${f.label}</span>
+        <details class="ateco tendina" id="dd-${f.dim}"><summary id="sum-${f.dim}">Tutti</summary>
+        <div class="ateco-pop"><div class="ateco-list tendina-list">` +
+        vals.map((v, i) => `<label><input type="checkbox" id="cb-${f.dim}-${i}" data-dim="${f.dim}" data-i="${i}" ${s.has(i) ? "checked" : ""}><span>${v}</span></label>`).join("") +
+        `</div><div class="ateco-act"><button type="button" class="tnd-none" data-dim="${f.dim}">Togli selezione</button><button type="button" class="tnd-close">Chiudi</button></div></div>
+        </details></div>`;
+      continue;
+    }
     h += `<div class="fgroup"><span class="seg-label">${f.label}</span><div class="chips">` +
       vals.map((v, i) => `<button type="button" class="chip" id="f-${f.dim}-${i}" data-dim="${f.dim}" data-i="${i}" aria-pressed="${!!(sel[f.dim] && sel[f.dim].has(i))}" title="${v}">${f.short ? f.short(v) : v}</button>`).join("") +
       `</div></div>`;
   }
-  h += `<div class="fgroup"><span class="seg-label">Attività economica (Ateco)</span>
+  if (D.diz.ateco) h += `<div class="fgroup"><span class="seg-label">Attività economica (Ateco)</span>
     <details class="ateco" id="ateco-dd"><summary id="ateco-sum">Tutte</summary>
       <div class="ateco-pop"><input type="search" id="ateco-q" placeholder="Cerca codice o descrizione" aria-label="Cerca Ateco">
       <div class="ateco-list" id="ateco-list"></div>
@@ -581,6 +876,18 @@ function costruisciFiltri() {
     box.querySelectorAll(".chip.tipo").forEach(x => x.setAttribute("aria-pressed", x.dataset.k === tipo));
     aggiorna();
   });
+  box.querySelectorAll(".tendina-list input[type=checkbox]").forEach(cb => cb.onchange = () => {
+    const d = cb.dataset.dim, i = +cb.dataset.i;
+    sel[d] = sel[d] || new Set();
+    cb.checked ? sel[d].add(i) : sel[d].delete(i);
+    aggiorna();
+  });
+  box.querySelectorAll(".tnd-none").forEach(b => b.onclick = () => {
+    const d = b.dataset.dim; if (sel[d]) sel[d].clear();
+    box.querySelectorAll(`#dd-${d} input[type=checkbox]`).forEach(cb => cb.checked = false);
+    aggiorna();
+  });
+  box.querySelectorAll(".tnd-close").forEach(b => b.onclick = () => b.closest("details").open = false);
   box.querySelectorAll(".chip:not(.tipo)").forEach(b => b.onclick = () => {
     const d = b.dataset.dim, i = +b.dataset.i;
     sel[d] = sel[d] || new Set();
@@ -588,8 +895,9 @@ function costruisciFiltri() {
     b.setAttribute("aria-pressed", sel[d].has(i));
     aggiorna();
   });
-  const lista = document.getElementById("ateco-list");
   sel.ateco = sel.ateco || new Set();
+  if (D.diz.ateco) {
+  const lista = document.getElementById("ateco-list");
   const voci = D.diz.ateco.map((v, i) => ({ i, ...dividiAteco(v), testo: v.toLowerCase() }));
   const disegnaAteco = (q = "") => {
     q = q.trim().toLowerCase();
@@ -637,6 +945,7 @@ function costruisciFiltri() {
   };
   document.getElementById("ateco-none").onclick = () => { sel.ateco.clear(); disegnaAteco(document.getElementById("ateco-q").value); aggiorna(); };
   document.getElementById("ateco-close").onclick = () => document.getElementById("ateco-dd").open = false;
+  }
   document.getElementById("reset").onclick = () => { for (const k in sel) sel[k].clear(); tipo = "C"; costruisciFiltri(); aggiorna(); };
   document.getElementById("riduci").onclick = () => impostaRidotti(true);
 }
@@ -659,12 +968,19 @@ function dividiAteco(v) {
 function statoFiltri() {
   const n = Object.values(sel).reduce((a, s) => a + s.size, 0) + (tipo !== "C" ? 1 : 0);
   document.getElementById("reset").disabled = n === 0;
-  const s = sel.ateco;
-  document.getElementById("ateco-sum").textContent = !s.size ? "Tutte" : s.size === 1 ? D.diz.ateco[[...s][0]] : `${s.size} selezionate`;
+  const s = sel.ateco || new Set();
+  for (const f of FILTRI) {
+    const el = f.tendina && document.getElementById(`sum-${f.dim}`);
+    if (!el) continue;
+    const sf = sel[f.dim] || new Set();
+    el.textContent = !sf.size ? "Tutti" : sf.size === 1 ? D.diz[f.dim][[...sf][0]] : `${sf.size} selezionati`;
+  }
+  if (document.getElementById("ateco-sum")) document.getElementById("ateco-sum").textContent = !s.size ? "Tutte" : s.size === 1 ? D.diz.ateco[[...s][0]] : `${s.size} selezionate`;
   // riepilogo per la barra ridotta
   const parti = [];
-  if (tipo !== "C") parti.push(`<b>${tipo === "MD" ? "Mortali denunciati" : "Mortali accertati"}</b>`);
+  if (tipo !== "C") parti.push(`<b>${(tipo === "MD" ? ETIC.MD() : ETIC.MA()).replace("M – ", "")}</b>`);
   else if (pagina === "orari") parti.push(`<b>Accertati positivi</b>`);
+  if (pagina === "malattie") parti.push(`ICD-10 <b>${icdTipo === "a" ? "accertato" : "denunciato"}</b>`);
   for (const f of FILTRI) {
     const sf = sel[f.dim];
     if (!sf || !sf.size || !D.diz[f.dim]) continue;
@@ -735,16 +1051,18 @@ function deltaHtml(v) {
 function kpi() {
   const anni = D.meta.anni, col = coloriAnni();
   const tot = agg("base", ["anno"]);
-  const cosa = tipo === "MD" ? "Mortali denunciati" : tipo === "MA" ? "Mortali accertati" : pagina === "orari" ? "Infortuni accertati" : "Totale eventi";
+  const cosa = tipo === "MD" ? ETIC.MD().replace("M – ", "") : tipo === "MA" ? ETIC.MA().replace("M – ", "") : pagina === "orari" ? "Infortuni accertati" : pagina === "malattie" ? "Casi denunciati" : "Totale eventi";
+  const lav = lavDisponibile() ? agg("lav", ["anno"]) : null;
   document.getElementById("kpi-title").textContent = `${cosa} · ${nomeTerr()}`;
-  document.getElementById("kpi-sub").textContent = pagina === "mensile" ? `Periodo ${periodo()}` : pagina === "orari" ? "Industria e servizi · casi definiti positivi · anno di accadimento" : "Anno di accadimento";
+  document.getElementById("kpi-sub").textContent = pagina === "mensile" ? `Periodo ${periodo()}` : pagina === "orari" ? "Industria e servizi · casi definiti positivi · anno di accadimento" : pagina === "malattie" ? "Anno di protocollo" + (sel.settc && sel.settc.size ? " · con il filtro Settore correlato restano solo i casi riconosciuti" : "") : "Anno di accadimento";
   document.getElementById("kpis").innerHTML = anni.slice().reverse().map((a, idx, arr) => {
     const n = get(tot, a).n, p = arr[idx + 1] != null ? get(tot, arr[idx + 1]).n : 0;
     const r = get(tot, a);
     return `<div class="kpi"><div class="lab"><i style="background:${col[a]}"></i>${cosa} ${a}</div>
       <div class="val">${fmtK(n)}</div>
       <div class="d">${p ? `${deltaHtml(n / p - 1)} sull'anno prima` : "&nbsp;"}</div>
-      <div class="d">${tipo !== "C" ? (tipo === "MA" ? "esito mortale riconosciuto da INAIL" : "denunce con data di morte") : [haDenunciati() ? `${fmt.format(r.md)} mortali denunciati` : "", haAccertati() ? `${fmt.format(r.ma)} mortali accertati` : ""].filter(Boolean).join(", ")}</div></div>`;
+      ${pagina === "malattie" ? `<div class="d">${lav ? `<b>${fmt.format(get(lav, a).n)}</b> lavoratori` : "lavoratori: non calcolabili con questi filtri"}</div>` : ""}
+      <div class="d">${tipo !== "C" ? (tipo === "MA" ? (pagina === "malattie" ? "morte riconosciuta come causata dalla malattia" : "esito mortale riconosciuto da INAIL") : (pagina === "malattie" ? "casi di lavoratori deceduti, per anno di protocollo" : "denunce con data di morte")) : [haDenunciati() ? `${fmt.format(r.md)} ${pagina === "malattie" ? "casi con decesso" : "mortali denunciati"}` : "", haAccertati() ? `${fmt.format(r.ma)} ${pagina === "malattie" ? "con decesso riconosciuto" : "mortali accertati"}` : ""].filter(Boolean).join(", ")}</div></div>`;
   }).join("");
 }
 
@@ -960,6 +1278,174 @@ function mappaCalore() {
   document.getElementById("hm").innerHTML = h;
 }
 
+/* ---------- pagina Malattie professionali ---------- */
+let icdTipo = "d";
+const lavDisponibile = () => pagina === "malattie" && tipo === "C" && ["tab", "asb", "icdg", "settc"].every(d => !(sel[d] && sel[d].size)) && D.cubi.lav;
+// conteggi per anno e categoria, eventualmente raggruppati in categorie superiori (mappa: indice -> indice padre)
+function perCategoria(cubo, dim, etichette, mappa) {
+  const m = agg(cubo, ["anno", dim]), out = new Map();
+  for (const [k, v] of m) {
+    const a = Math.floor(k / B), i = k % B, c = mappa ? mappa[i] : i;
+    const key = a * B + c;
+    out.set(key, (out.get(key) || 0) + v.n);
+  }
+  return { etichette, val: (a, i) => out.get(a * B + i) || 0 };
+}
+function barreAnni(idCanvas, idLeg, dati, { top = 10, escludi = [], anni = D.meta.anni, ordina = true } = {}) {
+  const col = coloriAnni(), ult = anni[anni.length - 1];
+  let idx = dati.etichette.map((e, i) => i).filter(i => !escludi.includes(dati.etichette[i]));
+  if (ordina) idx.sort((x, y) => dati.val(ult, y) - dati.val(ult, x));
+  idx = idx.filter(i => anni.some(a => dati.val(a, i) > 0)).slice(0, top);
+  legenda(idLeg, anni.map(a => [a, col[a]]));
+  const corta = s => s.length > 46 ? s.slice(0, 44) + "…" : s;
+  disegna(idCanvas, {
+    type: "bar",
+    data: {
+      labels: idx.map(i => corta(dati.etichette[i])),
+      datasets: anni.map(a => ({ label: String(a), backgroundColor: col[a], borderRadius: 3, barPercentage: .9, categoryPercentage: .8,
+        data: idx.map(i => dati.val(a, i)) })),
+    },
+    options: {
+      indexAxis: "y", responsive: true, maintainAspectRatio: false,
+      scales: { x: { beginAtZero: true, ticks: { callback: v => fmtK(v) } }, y: { grid: { display: false }, ticks: { font: { size: 11 } } } },
+      plugins: { tooltip: { callbacks: { title: c => dati.etichette[idx[c[0].dataIndex]], label: c => ` ${c.dataset.label}: ${fmt.format(c.raw)}` } } },
+    },
+  });
+}
+function quoteAnni(idCanvas, idLeg, dati, palette, anniScelti) {
+  const anni = (anniScelti || D.meta.anni).slice().reverse();
+  const tot = a => dati.etichette.reduce((s, _, i) => s + dati.val(a, i), 0);
+  const cats = dati.etichette.map((e, i) => i).filter(i => anni.some(a => dati.val(a, i) > 0));
+  const pal = palette || [css("--s-blue"), css("--s-orange"), css("--s-aqua"), css("--s-violet"), css("--s-yellow"), css("--s-magenta"), css("--ink-3")];
+  legenda(idLeg, cats.map((i, k) => [dati.etichette[i], pal[k % pal.length]]));
+  disegna(idCanvas, {
+    type: "bar",
+    data: {
+      labels: anni.map(String),
+      datasets: cats.map((i, k) => ({
+        label: dati.etichette[i], backgroundColor: pal[k % pal.length], borderColor: css("--panel"), borderWidth: { right: 2 }, borderSkipped: false,
+        data: anni.map(a => tot(a) ? dati.val(a, i) / tot(a) : 0), conteggi: anni.map(a => dati.val(a, i)),
+      })),
+    },
+    options: {
+      indexAxis: "y", responsive: true, maintainAspectRatio: false,
+      scales: { x: { stacked: true, max: 1, ticks: { callback: v => pct(v, 0) }, grid: { display: false } }, y: { stacked: true, grid: { display: false } } },
+      plugins: {
+        tooltip: { callbacks: { label: c => ` ${c.dataset.label}: ${pct(c.raw)} (${fmt.format(c.dataset.conteggi[c.dataIndex])})` } },
+        etichette: { on: true, inside: true, format: v => pct(v, 0) },
+      },
+    },
+    plugins: [etichette],
+  });
+}
+function mpIcd() {
+  document.querySelectorAll("#icd-seg button").forEach(b => {
+    b.setAttribute("aria-pressed", b.dataset.k === icdTipo);
+    b.onclick = () => { icdTipo = b.dataset.k; aggiorna(); };
+  });
+  const cubo = `icd_${icdTipo}`;
+  document.getElementById("icd-sett-sub").textContent = `Casi per anno di protocollo · ICD-10 ${icdTipo === "a" ? "accertato (i casi negativi spesso non ce l'hanno)" : "denunciato"}`;
+  barreAnni("c-icd-sett", "leg-icd-sett", perCategoria(cubo, "icd", D.diz.icd_sett, D.diz.icd_map), { escludi: ["Non determinato"] });
+  barreAnni("c-icd", "leg-icd", perCategoria(cubo, "icd", D.diz.icd), { escludi: ["Non determinato"] });
+}
+function mpAgente() {
+  const anni = D.meta.anni, ult = anni[anni.length - 1];
+  const ag = perCategoria("agente", "agente", D.diz.agente);
+  const iND = D.diz.agente.indexOf("Non determinato");
+  const tot = agg("base", ["anno"]);
+  const senza = iND >= 0 ? ag.val(ult, iND) : 0, tutti = get(tot, ult).n;
+  document.getElementById("agente-nota").textContent = `Valorizzati solo per i casi riconosciuti: nel ${ult} ${fmt.format(tutti - senza)} casi su ${fmt.format(tutti)} hanno un agente causale`;
+  barreAnni("c-agg", "leg-agg", perCategoria("agente", "agente", D.diz.agente_gg, D.diz.agente_map), { escludi: ["Non determinato"] });
+  barreAnni("c-ag", "leg-ag", ag, { escludi: ["Non determinato"] });
+  barreAnni("c-sett", "leg-sett", perCategoria("sub", "sub", D.diz.sett, D.diz.sub_map), { escludi: ["Non determinato"] });
+  barreAnni("c-sub", "leg-sub", perCategoria("sub", "sub", D.diz.sub), { escludi: ["Non determinato"] });
+}
+function mpQuote() {
+  const verde = [css("--s-aqua"), css("--s-orange"), css("--s-yellow"), css("--s-violet"), css("--ink-3")];
+  const ord = (diz, primo) => diz.map((e, i) => [e, i]).sort((x, y) => (y[0] === primo) - (x[0] === primo));
+  const es = ord(D.diz.esito, "Positivo"), m = perCategoria("base", "esito", D.diz.esito);
+  quoteAnni("c-mp-esito", "leg-mp-esito", { etichette: es.map(([e]) => e), val: (a, k) => m.val(a, es[k][1]) }, verde);
+  quoteAnni("c-mp-tab", "leg-mp-tab", perCategoria("base", "tab", D.diz.tab), [css("--s-blue"), css("--s-violet"), css("--ink-3")]);
+  quoteAnni("c-mp-ind", "leg-mp-ind", perCategoria("indennizzo", "indennizzo", D.diz.indennizzo));
+  const seq = ["#cfe0f6", "#9ec5f4", "#6da7ec", "#3987e5", "#256abf", "#184f95", "#0d366b"];
+  quoteAnni("c-mp-grado", "leg-mp-grado", perCategoria("grado", "grado", D.diz.grado), seq);
+}
+function mpDecessi() {
+  const sec = document.getElementById("sec-decessi");
+  if (!D.cubi.dec) { sec.hidden = true; return; }
+  sec.hidden = false;
+  // i decessi hanno al massimo la regione: per una provincia si mostra la sua regione (se disponibile) o l'Italia
+  let tDec = terr, nomeDec = TERR[terr], perche = "";
+  if (!D.meta.dec_regioni) { tDec = 0; nomeDec = "Italia"; perche = "il file dei decessi non indica il territorio"; }
+  else if (terr === 2 || terr === 3) { tDec = 1; nomeDec = "Lombardia"; perche = `per le province non c'è il dato: per ${TERR[terr]} mostro la Lombardia`; }
+  else if (terr === 4 && extra && extra.tipo === "provincia") {
+    tDec = extra.regione === "Lombardia" ? 1 : 0; nomeDec = TERR[tDec];
+    perche = `per le province non c'è il dato: per ${extra.nome} mostro ${tDec === 1 ? "la Lombardia" : "l'Italia (la sua regione non è caricata: sceglila dal menu Altra regione)"}`;
+  }
+  const salva = terr;
+  terr = tDec;
+  try { mpDecessiTerr(nomeDec, perche); } finally { terr = salva; }
+}
+function mpDecessiTerr(nomeDec, perche) {
+  document.getElementById("dec-titolo").textContent = `Decessi per malattia professionale · ${nomeDec}`;
+  const anni = D.meta.anni_dec, col = coloriAnni();
+  const tot = agg("dec", ["anno"]), sil = perCategoria("dec", "sil", D.diz.sil);
+  const iS = D.diz.sil.indexOf("Silicosi o asbestosi");
+  const nonApplicati = [];
+  if (tipo !== "C") nonApplicati.push("tipologia");
+  for (const d of ["esito", "tab", "asb", "icdg", "settc"]) if (sel[d] && sel[d].size) nonApplicati.push(FILTRI.find(f => f.dim === d).label.toLowerCase());
+  document.getElementById("dec-nota").textContent = "Per anno di morte" + (perche ? ` · ${perche}` : "") +
+    (nonApplicati.length ? ` · non si applicano i filtri ${nonApplicati.join(", ")}` : "");
+  document.getElementById("dec-kpis").innerHTML = anni.slice().reverse().map((a, k, arr) => {
+    const n = get(tot, a).n, p = arr[k + 1] != null ? get(tot, arr[k + 1]).n : 0;
+    return `<div class="kpi"><div class="lab"><i style="background:${col[a]}"></i>Decessi ${a}</div>
+      <div class="val">${fmt.format(n)}</div>
+      <div class="d">${p ? `${deltaHtml(n / p - 1)} sull'anno prima` : "&nbsp;"}</div>
+      <div class="d">${iS >= 0 && n ? `${pct(sil.val(a, iS) / n)} per silicosi o asbestosi` : "&nbsp;"}</div></div>`;
+  }).join("");
+  barreAnni("c-dec-eta", "leg-dec-eta", perCategoria("dec", "etam", D.diz.etam), { anni, ordina: false, escludi: ["Non determinata"] });
+  quoteAnni("c-dec-sil", "leg-dec-sil", sil, [css("--s-orange"), css("--s-blue"), css("--ink-3")], anni);
+  quoteAnni("c-dec-naz", "leg-dec-naz", perCategoria("dec", "naz", D.diz.naz), null, anni);
+}
+function quadroConfrontoMP() {
+  const anni = D.meta.anni, ult = anni[anni.length - 1], prec = anni[anni.length - 2];
+  const tot = agg("base", ["terr", "anno"], { tuttiTerr: true });
+  const per = dim => agg("base", ["terr", "anno", dim], { tuttiTerr: true });
+  const es = per("esito"), tb = per("tab"), gn = per("genere"), nz = per("naz"), as = per("asb");
+  const lav = lavDisponibile() ? agg("lav", ["terr", "anno"], { tuttiTerr: true }) : null;
+  const iP = D.diz.esito.indexOf("Positivo"), iT = D.diz.tab.indexOf("Tabellata"), iF = D.diz.genere.indexOf("Femmine");
+  const iITA = D.diz.naz.findIndex(v => v.startsWith("ITA")), iND = D.diz.naz.findIndex(v => v.startsWith("Non"));
+  const iA = D.diz.asb.indexOf("Asbesto-correlata");
+  const PADRE = { 1: 0, 2: 1, 3: 1 };
+  if (extra) PADRE[4] = extra.tipo === "provincia" && extra.regione === "Lombardia" ? 1 : 0;
+  const quota = (t, n) => {
+    if (!(t in PADRE)) return `<span class="quota-di">riferimento</span>`;
+    const pT = PADRE[t], np = get(tot, pT, ult).n;
+    return `${pct(n / np)} <span class="quota-di">${pT === 0 ? "d'Italia" : "della " + TERR[pT]}</span>`;
+  };
+  let h = `<thead><tr><th>Territorio</th>${anni.map(a => `<th>Casi<br>${a}</th>`).join("")}<th class="grp">Quota<br>${ult}</th><th class="grp">Var. ${prec ?? ""}→${ult}</th>
+    <th class="grp">Lavoratori<br>${ult}</th><th class="grp">Riconosciuti<br>${ult}</th><th>Tabellate<br>${ult}</th><th>Femmine<br>${ult}</th><th>Nati all'estero<br>${ult}</th>
+    <th class="grp">Asbesto<br>${ult}</th><th>Casi con<br>decesso</th><th>Decesso<br>riconosciuto</th></tr></thead><tbody>`;
+  TERR.forEach((nome, t) => {
+    const nU = get(tot, t, ult).n, nP = prec != null ? get(tot, t, prec).n : 0;
+    const est = (nU - (iITA >= 0 ? get(nz, t, ult, iITA).n : 0) - (iND >= 0 ? get(nz, t, ult, iND).n : 0)) / nU;
+    h += `<tr class="${t === terr ? "sel" : ""} ${t === 4 ? "extra" : ""}" data-t="${t}" tabindex="0">
+      <td class="terr-n">${nome}</td>
+      ${anni.map(a => a === ult ? `<td><b>${fmt.format(get(tot, t, a).n)}</b></td>` : `<td>${fmt.format(get(tot, t, a).n)}</td>`).join("")}
+      <td class="grp">${quota(t, nU)}</td><td class="grp">${deltaHtml(nP ? nU / nP - 1 : NaN)}</td>
+      <td class="grp">${lav ? fmt.format(get(lav, t, ult).n) : "–"}</td>
+      <td class="grp">${iP >= 0 ? pct(get(es, t, ult, iP).n / nU) : "–"}</td><td>${iT >= 0 ? pct(get(tb, t, ult, iT).n / nU) : "–"}</td>
+      <td>${iF >= 0 ? pct(get(gn, t, ult, iF).n / nU) : "–"}</td><td>${pct(est)}</td>
+      <td class="grp">${iA >= 0 ? fmt.format(get(as, t, ult, iA).n) : "–"}</td><td>${fmt.format(get(tot, t, ult).md)}</td><td>${fmt.format(get(tot, t, ult).ma)}</td></tr>`;
+  });
+  const tbEl = document.getElementById("cmp");
+  tbEl.innerHTML = h + `</tbody>`;
+  tbEl.querySelectorAll("tbody tr").forEach(r => {
+    r.onclick = () => { terr = +r.dataset.t; aggiornaMenuTerritori(); aggiorna(); };
+    r.onkeydown = e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); r.click(); } };
+  });
+}
+
 function periodo() {
   const m = D.meta.mesi_ultimo_anno;
   return m >= 12 ? "anno intero" : m === 1 ? "gennaio" : `gennaio – ${MESI_LUNGHI[m - 1]}`;
@@ -986,6 +1472,19 @@ window.addEventListener("error", e => mostraErrore(e.message || String(e)));
 window.addEventListener("unhandledrejection", e => mostraErrore(String(e.reason)));
 function aggiornaOra() {
   const t0 = performance.now();
+  if (pagina === "malattie") {
+    sezione("Filtri", statoFiltri);
+    sezione("Confronto territori", quadroConfrontoMP);
+    sezione("Totali", kpi);
+    sezione("Malattie (ICD-10)", mpIcd);
+    sezione("Agente e settore", mpAgente);
+    sezione("Esito e indennizzo", mpQuote);
+    sezione("Decessi", mpDecessi);
+    sezione("Mese di protocollo", () => linee("c-mp-mese", "leg-mp-mese", "mese", "mese", D.diz.mese));
+    document.querySelectorAll("#terr-seg button").forEach((b, i) => b.setAttribute("aria-pressed", i === terr));
+    console.info(`Portale aggiornato in ${Math.round(performance.now() - t0)} ms`);
+    return;
+  }
   if (pagina === "orari") {
     sezione("Filtri", statoFiltri);
     sezione("Totali", kpi);
@@ -1030,14 +1529,17 @@ async function apri(nome) {
   const P = PAGINE[nome];
   document.getElementById("page-title").textContent = P.titolo;
   document.getElementById("page-desc").textContent = P.desc;
+  costruisciInfo();
   document.getElementById("demo").hidden = !D.meta.demo;
   const m = D.meta;
   document.getElementById("foot-fonte").innerHTML = nome === "orari"
     ? `Fonte: ${m.fonte} · ${m.file} file Excel`
+    : nome === "malattie"
+    ? `Fonte: <a href="https://dati.inail.it/portale/it/dataset/malattie-professionali.html" target="_blank" rel="noopener">INAIL Open Data – Malattie professionali</a> · dati semestrali per data di protocollo`
     : `Fonte: <a href="https://dati.inail.it/portale/it/dataset/open-api.html" target="_blank" rel="noopener">INAIL Open Data – Open API</a> · Licenza IODL 2.0`;
   if (nome === "orari") document.getElementById("meta").innerHTML = `Anni <b>${m.anni.join(" · ")}</b><br>Banca dati statistica INAIL · <b>${m.file}</b> file`;
   else document.getElementById("meta").innerHTML =
-    `Anni <b>${m.anni.join(" · ")}</b>${nome === "mensile" ? ` · periodo <b>${periodo()}</b>` : ""}<br>Rilevazione INAIL al <b>${m.rilevazione ?? "–"}</b>` +
+    `${nome === "malattie" ? "Anni di protocollo" : "Anni"} <b>${m.anni.join(" · ")}</b>${nome === "mensile" ? ` · periodo <b>${periodo()}</b>` : ""}<br>Rilevazione INAIL al <b>${m.rilevazione ?? "–"}</b>` +
     (m.chiamate_fallite && m.chiamate_fallite.length ? `<br><span class="delta up" title="${m.chiamate_fallite.join('\n')}">Dati incompleti: ${m.chiamate_fallite.length} ${m.chiamate_fallite[0].startsWith("File") ? "regioni mancanti" : "chiamate API non riuscite"}</span>` : "");
   document.getElementById("mese-title").textContent = nome === "mensile" ? "Andamento mensile" : "Andamento per mese";
   document.getElementById("mese-sub").textContent = nome === "mensile"
@@ -1048,9 +1550,9 @@ async function apri(nome) {
   aggiorna();
 }
 
-function daHash() { return location.hash === "#mensile" ? "mensile" : location.hash === "#orari" ? "orari" : "semestrale"; }
+function daHash() { const h = location.hash.slice(1); return ["mensile", "orari", "malattie"].includes(h) ? h : "semestrale"; }
 window.addEventListener("hashchange", () => apri(daHash()));
-document.addEventListener("click", e => { const d = document.getElementById("ateco-dd"); if (d && d.open && !d.contains(e.target)) d.open = false; });
+document.addEventListener("click", e => { document.querySelectorAll("details.ateco[open]").forEach(d => { if (!d.contains(e.target)) d.open = false; }); });
 
 // ridisegna i grafici quando cambia il tema
 const ridisegna = () => { if (D) { chartBase(); aggiorna(); } };
@@ -1061,6 +1563,10 @@ new MutationObserver(ridisegna).observe(document.documentElement, { attributes: 
 const barra = document.querySelector(".top");
 const misuraBarra = () => document.documentElement.style.setProperty("--top-h", barra.getBoundingClientRect().height + "px");
 new ResizeObserver(misuraBarra).observe(barra); misuraBarra();
+document.getElementById("info-btn").onclick = () => apriInfo(document.getElementById("info-pan").hidden);
+document.getElementById("pdf-btn").onclick = () => { preparaStampa(); setTimeout(() => window.print(), 50); };
+document.getElementById("info-chiudi").onclick = () => apriInfo(false);
+document.addEventListener("keydown", e => { if (e.key === "Escape" && !document.getElementById("info-pan").hidden) apriInfo(false); });
 document.getElementById("espandi").onclick = () => impostaRidotti(false);
 document.getElementById("azzera-c").onclick = () => { for (const k in sel) sel[k].clear(); tipo = "C"; costruisciFiltri(); aggiorna(); };
 {
