@@ -8,7 +8,7 @@ Il portale ha quattro schede:
 | Scheda | Cosa mostra | Da dove vengono i dati |
 |---|---|---|
 | **Semestrale · denunce ed esiti** | Denunce di infortunio degli ultimi tre anni completi, con l'esito della definizione | CSV semestrali Open Data INAIL, uno per regione |
-| **Mensile · denunce** | Denunce dell'anno in corso contro lo stesso periodo dell'anno prima | CSV mensili Open Data INAIL (o Open API) |
+| **Mensile · denunce** | Denunce dell'anno in corso contro lo stesso periodo dell'anno prima | CSV mensili Open Data INAIL, uno per regione |
 | **Orari · Brescia** | Infortuni accertati positivi per ora e giorno della settimana, provincia di Brescia | Excel della banca dati statistica INAIL |
 | **Malattie professionali** | Malattie denunciate per anno di protocollo, casi e lavoratori, decessi | CSV Open Data INAIL delle malattie professionali |
 
@@ -64,7 +64,9 @@ Dal portale Open Data INAIL scarica il dataset semestrale degli infortuni di **t
 il totale Italia è la loro somma. Vanno bene sia gli `.zip` sia i `.csv`.
 Lo script riconosce la regione dal nome del file (`DatiConCadenzaSemestraleInfortuniLombardia_csv.zip` diventa LOMBARDIA)
 e, se un file è scaricato due volte (`… (1).csv`), tiene il più recente.
-Se scarichi anche i file mensili (`DatiConCadenzaMensileInfortuni…`), mettili nella stessa cartella.
+Nella stessa cartella vanno anche i file **mensili** di tutte le regioni (`DatiConCadenzaMensileInfortuniLombardia…`),
+dalla pagina [Dati con cadenza mensile](https://dati.inail.it/portale/it/dataset/infortuni-sul-lavoro/dati-con-cadenza-mensile.html).
+Lo script distingue da solo semestrali e mensili dal nome del file. Ad ogni nuova pubblicazione mensile sostituisci i vecchi file.
 
 **Malattie professionali (cartella `csv_malattie`).**
 - `DatiSemestraliMalattieProfessionaliDataProtItalia.csv`: il file per data di protocollo dell'Italia. È obbligatorio.
@@ -89,8 +91,8 @@ cd pipeline
 # facoltativo: cancella le tabelle tipologiche salvate, così si riscaricano aggiornate
 Remove-Item -Recurse -Force cache\tipologiche -ErrorAction SilentlyContinue
 
-# infortuni semestrali
-python scarica_inail.py --solo semestrale --da-csv ..\csv_inail
+# infortuni semestrali e mensili
+python scarica_inail.py --da-csv ..\csv_inail
 
 # orari Brescia
 python scarica_inail.py --ora-giorno ..\ora_brescia
@@ -101,9 +103,9 @@ python scarica_inail.py --malattie ..\csv_malattie
 
 Non serve lanciarli tutti: se è cambiato solo un dataset, basta il comando corrispondente.
 
-**Perché `--solo semestrale`.** Senza quell'opzione lo script, dopo il semestrale, cerca anche i file mensili e,
-se non li trova, si ferma con un errore. Se in `csv_inail` ci sono anche i mensili, togli `--solo semestrale`
-per elaborarli entrambi, oppure usa `--solo mensile` per fare solo quelli.
+**Solo uno dei due.** Con `--solo mensile` (o `--solo semestrale`) lo script elabora un solo dataset: è il caso
+tipico ogni mese, quando INAIL pubblica solo i mensili nuovi. Se in `csv_inail` mancano i file di uno dei due dataset,
+senza `--solo` lo script si ferma con un errore dopo aver elaborato l'altro.
 
 ### Cosa controllare nell'output
 
@@ -111,6 +113,8 @@ per elaborarli entrambi, oppure usa `--solo mensile` per fare solo quelli.
   - Le percentuali di decodifica (Ateco, luogo di nascita…) devono essere vicine al 100%.
   - Se lo script elenca codici non trovati, una tabella tipologica non si è scaricata o è cambiata.
   - La riga "regioni mancanti" deve essere vuota, altrimenti il totale Italia è incompleto.
+  - Per il mensile, controlla che la riga "scritto … mensile.json" e la pagina mostrino il periodo giusto
+    (per esempio "gennaio – luglio") e la data di rilevazione dell'ultima pubblicazione.
 - **Orari.**
   - Lo script stampa i totali per anno.
   - Segnala anche gli anni con file mancanti e i file doppi o con etichette incoerenti (per esempio un file M che ha più casi del suo C).
@@ -199,8 +203,11 @@ Il token è come una password: non va mai scritto nei file del progetto, perché
   - Senza filtro Esito si vedono tutte le denunce; con Esito = Positivo gli infortuni riconosciuti.
   - L'ultimo anno può ancora cambiare leggermente alle rilevazioni successive.
 - **Mensile.**
-  - Totali, età, Ateco e giorni della settimana confrontano lo stesso periodo nei due anni.
-  - Il grafico per mese mostra l'anno precedente intero.
+  - Il CSV contiene l'anno in corso e il precedente, ciascuno fotografato alla stessa data
+    (per esempio le denunce 2025 al 31/07/2025 e quelle 2026 al 31/07/2026), per gli stessi mesi.
+    Il confronto è quindi alla pari, anche per le denunce arrivate in ritardo.
+  - La data di rilevazione mostrata è quella dell'anno più recente.
+  - Nei totali, accanto ai mortali denunciati, c'è la variazione sull'anno prima.
 - **Mortali.**
   - *Mortali denunciati* = denunce con data di morte.
   - *Mortali accertati* = esito mortale riconosciuto da INAIL, solo nel semestrale.

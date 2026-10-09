@@ -652,6 +652,12 @@ def esporta(df: pd.DataFrame, dataset: str, anni: list[int], falliti: list[str],
         diz["esito"] = ordina(df["esito"])
 
     rilev = df["DataRilevazione"].dropna().astype(str)
+    # Il CSV mensile contiene ogni anno fotografato alla sua data (es. 31/07/2025 e 31/07/2026):
+    # la rilevazione da mostrare è la più recente.
+    date_ril = pd.to_datetime(rilev, format="%d/%m/%Y", errors="coerce").dropna()
+    ril_txt = date_ril.max().strftime("%d/%m/%Y") if len(date_ril) else (rilev.mode().iat[0] if len(rilev) else None)
+    # mesi disponibili per ogni anno: il grafico mensile non disegna i mesi senza dati
+    mesi_per_anno = {str(int(a)): int(g.max()) + 1 for a, g in df.groupby("anno")["mese"]}
     mesi_ultimo = int(df.loc[df["anno"] == max(anni), "mese"].max()) + 1 if len(df) else 0
     # Mensile: totali e grafici confrontano lo STESSO periodo (gen → ultimo mese disponibile).
     # Il cubo "mese" resta completo per mostrare l'andamento dell'anno precedente.
@@ -659,10 +665,11 @@ def esporta(df: pd.DataFrame, dataset: str, anni: list[int], falliti: list[str],
     out = {
         "meta": {
             "dataset": dataset,
-            "rilevazione": rilev.mode().iat[0] if len(rilev) else None,
+            "rilevazione": ril_txt,
             "generato": dt.datetime.now().strftime("%d/%m/%Y %H:%M"),
             "anni": sorted(int(a) for a in df["anno"].unique()),
             "mesi_ultimo_anno": mesi_ultimo,
+            "mesi_per_anno": mesi_per_anno,
             "chiamate_fallite": falliti,
             "fonte": "INAIL Open Data – " + ENDPOINT[dataset],
             "demo": False,

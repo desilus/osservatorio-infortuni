@@ -489,7 +489,7 @@ const PAGINE = {
   },
   mensile: {
     titolo: "Denunce dell'anno in corso",
-    desc: "Dataset mensile: denunce registrate dall'inizio dell'anno, confrontate con lo stesso periodo dell'anno precedente. Dati provvisori.",
+    desc: "Dataset mensile: denunce dall'inizio dell'anno, confrontate con lo stesso periodo dell'anno precedente. Ogni anno è fotografato alla stessa data (per esempio al 31 luglio), quindi il confronto è alla pari. Dati provvisori.",
   },
 };
 
@@ -563,14 +563,16 @@ const INFO = {
       ["Totale eventi", "Denunce di infortunio nel periodo, per anno di accadimento."],
       ["Mortali denunciati", "Denunce in cui è registrata una data di morte. Nel mensile non esistono i mortali accertati, perché l'accertamento non è ancora fatto."],
       ...INFO_TABELLA_INF,
-      ["Stesso periodo", "Totali, età, Ateco e giorni della settimana confrontano gli stessi mesi nei due anni. Solo il grafico per mese mostra l'anno precedente intero."],
+      ["Stesso periodo", "I due anni coprono gli stessi mesi (da gennaio all'ultimo mese pubblicato) e sono fotografati alla stessa data dell'anno: per esempio le denunce 2025 come risultavano al 31/07/2025 e quelle 2026 al 31/07/2026. Così le denunce arrivate in ritardo pesano allo stesso modo nei due anni."],
+      ["Variazione dei mortali", "Tra parentesi accanto ai mortali denunciati c'è la variazione rispetto all'anno prima. Sono numeri piccoli: basta qualche caso per spostare molto la percentuale."],
     ]},
     { titolo: "Filtri", voci: [
       ["Tipologia", "C – In complesso = tutte le denunce. M – Mortali denunciati = solo le denunce con data di morte."],
       ...INFO_FILTRI_INF.slice(0, 3), INFO_GESTIONE, INFO_GEST_TAR, INFO_FILTRI_INF[3],
     ]},
     { titolo: "Da sapere", voci: [INFO_FILTRI_USO, INFO_TERR_INF,
-      ["Perché i numeri cambiano", "Ogni mese INAIL aggiunge denunce arrivate in ritardo anche per i mesi già pubblicati: l'ultimo mese è sempre sottostimato."]] },
+      ["Perché i numeri cambiano", "Ogni mese INAIL aggiunge denunce arrivate in ritardo anche per i mesi già pubblicati: l'ultimo mese è sempre sottostimato, in entrambi gli anni."],
+      ["Mensile e semestrale", "Il mensile conta le denunce provvisorie dell'anno in corso; il semestrale i casi degli anni completi con il loro esito. I numeri dello stesso anno non coincidono."]] },
   ],
   orari: [
     { titolo: "Misure e grafici", voci: [
@@ -1057,12 +1059,13 @@ function kpi() {
   document.getElementById("kpi-sub").textContent = pagina === "mensile" ? `Periodo ${periodo()}` : pagina === "orari" ? "Industria e servizi · casi definiti positivi · anno di accadimento" : pagina === "malattie" ? "Anno di protocollo" + (sel.settc && sel.settc.size ? " · con il filtro Settore correlato restano solo i casi riconosciuti" : "") : "Anno di accadimento";
   document.getElementById("kpis").innerHTML = anni.slice().reverse().map((a, idx, arr) => {
     const n = get(tot, a).n, p = arr[idx + 1] != null ? get(tot, arr[idx + 1]).n : 0;
-    const r = get(tot, a);
+    const r = get(tot, a), rp = arr[idx + 1] != null ? get(tot, arr[idx + 1]) : null;
+    const varM = (k) => rp && rp[k] ? ` (${deltaHtml(r[k] / rp[k] - 1)})` : "";
     return `<div class="kpi"><div class="lab"><i style="background:${col[a]}"></i>${cosa} ${a}</div>
       <div class="val">${fmtK(n)}</div>
       <div class="d">${p ? `${deltaHtml(n / p - 1)} sull'anno prima` : "&nbsp;"}</div>
       ${pagina === "malattie" ? `<div class="d">${lav ? `<b>${fmt.format(get(lav, a).n)}</b> lavoratori` : "lavoratori: non calcolabili con questi filtri"}</div>` : ""}
-      <div class="d">${tipo !== "C" ? (tipo === "MA" ? (pagina === "malattie" ? "morte riconosciuta come causata dalla malattia" : "esito mortale riconosciuto da INAIL") : (pagina === "malattie" ? "casi di lavoratori deceduti, per anno di protocollo" : "denunce con data di morte")) : [haDenunciati() ? `${fmt.format(r.md)} ${pagina === "malattie" ? "casi con decesso" : "mortali denunciati"}` : "", haAccertati() ? `${fmt.format(r.ma)} ${pagina === "malattie" ? "con decesso riconosciuto" : "mortali accertati"}` : ""].filter(Boolean).join(", ")}</div></div>`;
+      <div class="d">${tipo !== "C" ? (tipo === "MA" ? (pagina === "malattie" ? "morte riconosciuta come causata dalla malattia" : "esito mortale riconosciuto da INAIL") : (pagina === "malattie" ? "casi di lavoratori deceduti, per anno di protocollo" : "denunce con data di morte")) : [haDenunciati() ? `${fmt.format(r.md)} ${pagina === "malattie" ? "casi con decesso" : "mortali denunciati"}${varM("md")}` : "", haAccertati() ? `${fmt.format(r.ma)} ${pagina === "malattie" ? "con decesso riconosciuto" : "mortali accertati"}${varM("ma")}` : ""].filter(Boolean).join(", ")}</div></div>`;
   }).join("");
 }
 
@@ -1506,7 +1509,8 @@ function aggiornaOra() {
   sezione("Gestione tariffaria", gestGenere);
   sezione("Giorno della settimana", () => linee("c-giorno", "leg-giorno", "giorno", "giorno", D.diz.giorno));
   const ult = D.meta.anni[D.meta.anni.length - 1], M = D.meta.mesi_ultimo_anno;
-  sezione("Andamento mensile", () => linee("c-mese", "leg-mese", "mese", "mese", D.diz.mese, (a, i) => !(a === ult && i >= M)));
+  const mpa = D.meta.mesi_per_anno || {};
+  sezione("Andamento mensile", () => linee("c-mese", "leg-mese", "mese", "mese", D.diz.mese.slice(0, Math.max(12 * !Object.keys(mpa).length, ...Object.values(mpa))), (a, i) => i < (mpa[a] ?? (a === ult ? M : 12))));
   sezione("Esito", esito);
   console.info(`Portale aggiornato in ${Math.round(performance.now() - t0)} ms`);
 }
@@ -1536,6 +1540,8 @@ async function apri(nome) {
     ? `Fonte: ${m.fonte} · ${m.file} file Excel`
     : nome === "malattie"
     ? `Fonte: <a href="https://dati.inail.it/portale/it/dataset/malattie-professionali.html" target="_blank" rel="noopener">INAIL Open Data – Malattie professionali</a> · dati semestrali per data di protocollo`
+    : nome === "mensile"
+    ? `Fonte: <a href="https://dati.inail.it/portale/it/dataset/infortuni-sul-lavoro/dati-con-cadenza-mensile.html" target="_blank" rel="noopener">INAIL Open Data – Infortuni, dati con cadenza mensile</a> · Licenza IODL 2.0`
     : `Fonte: <a href="https://dati.inail.it/portale/it/dataset/open-api.html" target="_blank" rel="noopener">INAIL Open Data – Open API</a> · Licenza IODL 2.0`;
   if (nome === "orari") document.getElementById("meta").innerHTML = `Anni <b>${m.anni.join(" · ")}</b><br>Banca dati statistica INAIL · <b>${m.file}</b> file`;
   else document.getElementById("meta").innerHTML =
@@ -1543,7 +1549,9 @@ async function apri(nome) {
     (m.chiamate_fallite && m.chiamate_fallite.length ? `<br><span class="delta up" title="${m.chiamate_fallite.join('\n')}">Dati incompleti: ${m.chiamate_fallite.length} ${m.chiamate_fallite[0].startsWith("File") ? "regioni mancanti" : "chiamate API non riuscite"}</span>` : "");
   document.getElementById("mese-title").textContent = nome === "mensile" ? "Andamento mensile" : "Andamento per mese";
   document.getElementById("mese-sub").textContent = nome === "mensile"
-    ? `Per mese di accadimento. L'anno precedente è mostrato intero, i totali sopra si fermano a ${MESI_LUNGHI[m.mesi_ultimo_anno - 1]}.`
+    ? (Object.values(m.mesi_per_anno || {}).every(v => v === m.mesi_ultimo_anno)
+        ? `Per mese di accadimento, da gennaio a ${MESI_LUNGHI[m.mesi_ultimo_anno - 1]} di ogni anno.`
+        : `Per mese di accadimento. L'anno precedente è mostrato fin dove ci sono dati, i totali sopra si fermano a ${MESI_LUNGHI[m.mesi_ultimo_anno - 1]}.`)
     : "Per mese di accadimento";
   document.getElementById("foot-gen").textContent = `Dati elaborati il ${m.generato}`;
   costruisciFiltri();
