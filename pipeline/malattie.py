@@ -265,6 +265,8 @@ def prepara(df: pd.DataFrame, tip: dict) -> pd.DataFrame:
     su = df["SubSettoreCorrelatoMalattia"].str.strip()
     df["sub"] = su.map(lambda c: S.nome_proprio(tip["sub"].get(c, f"Sottosettore {c}")) if c and c != "ND" else ND)
 
+    df["icdg"] = df["icdset_d"]
+    df["settc"] = df["sett"]
     df["indennizzo"] = df["Indennizzo"].str.strip().map(INDENNIZZO).fillna(ND)
     df["grado"] = grado_classe(df["GradoMenomazioneCaso"])
     df["mort_den"] = df["DataMorte"].astype(str).str.strip() != ""
@@ -388,7 +390,8 @@ def prepara_decessi(dd: pd.DataFrame, tip: dict) -> pd.DataFrame:
 # --------------------------------------------------------------------------
 # Cubi
 # --------------------------------------------------------------------------
-FILTRI = ["terr", "anno", "gestione", "genere", "naz", "esito", "tab", "asb"]
+# icdg = gruppo di malattie (settore ICD-10 del codice denunciato); settc = settore correlato alla malattia
+FILTRI = ["terr", "anno", "gestione", "genere", "naz", "esito", "tab", "asb", "icdg", "settc"]
 DIMS_DEC = ["terr", "anno", "gestione", "genere", "naz", "sil", "etam"]
 FILTRI_LAV = ["terr", "anno", "gestione", "genere", "naz", "esito"]
 
@@ -456,6 +459,8 @@ def esporta(df: pd.DataFrame, anni: list[int], tip: dict, dec: pd.DataFrame | No
         "etam": ETA_MORTE,
         "esito": o(["esito", "esito_lav"], ["Positivo", "Negativo", "In istruttoria"]),
         "tab": o("tab", TAB.values()),
+        "icdg": o("icdg", base=it),
+        "settc": o("settc", base=it),
         "asb": o("asb", ASB.values()),
         "icd": o(["icd_d", "icd_a"]),
         "agente": o("agente"),
